@@ -58,7 +58,7 @@ func _physics_process(delta: float) -> void:
 	if direction != 0.0:
 		velocity.x = move_toward(velocity.x, direction * move_speed, acceleration * delta)
 		facing_direction = direction
-		sprite.flip_h = direction < 0.0
+		sprite.flip_h = direction > 0.0
 	else:
 		velocity.x = move_toward(velocity.x, 0.0, friction * delta)
 
@@ -74,7 +74,7 @@ func _physics_process(delta: float) -> void:
 
 
 func _process(_delta: float) -> void:
-	sprite.flip_h = facing_direction < 0.0
+	sprite.flip_h = facing_direction > 0.0
 
 
 func _read_local_controls() -> void:
