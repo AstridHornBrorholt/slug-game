@@ -1,8 +1,17 @@
 [gd_scene format=3 uid="uid://cexmpscvgw5er"]
 
+[ext_resource type="Texture2D" uid="uid://cpb182giaxltj" path="res://Game/Slug/Pasted image.png" id="1_eo5lo"]
+[ext_resource type="Script" uid="uid://koeufjjvvqyr" path="res://Game/Slug/slug.gd" id="2_player"]
+
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_deoc1"]
 
 [node name="Player" type="CharacterBody2D" unique_id=505334421]
+script = ExtResource("2_player")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=497177919]
 shape = SubResource("CapsuleShape2D_deoc1")
+
+[node name="PastedImage" type="Sprite2D" parent="." unique_id=340646898]
+position = Vector2(-1, -1)
+scale = Vector2(0.104712, 0.10471205)
+texture = ExtResource("1_eo5lo")
