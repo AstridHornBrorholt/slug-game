@@ -2,13 +2,13 @@ class_name WeaponCatalog
 extends RefCounted
 
 const WEAPONS: Dictionary = {
-	"gun": {"name": "Pistol", "ammo": 12, "cooldown": 0.26, "speed": 650.0, "damage": 1, "pellets": 1, "spread": 0.0, "radius": 3.0, "blast": 0.0, "height": -7.0},
-	"cowboy": {"name": "Revolver", "ammo": 6, "cooldown": 0.42, "speed": 800.0, "damage": 1, "pellets": 1, "spread": 0.0, "radius": 3.0, "blast": 0.0, "height": -7.0},
-	"shotgun": {"name": "Shotgun", "ammo": 6, "cooldown": 0.8, "speed": 550.0, "damage": 1, "pellets": 5, "spread": 105.0, "radius": 2.0, "blast": 0.0, "height": -6.0},
-	"sniper": {"name": "Sniper", "ammo": 4, "cooldown": 1.1, "speed": 1300.0, "damage": 2, "pellets": 1, "spread": 0.0, "radius": 2.0, "blast": 0.0, "height": -9.0},
+	"gun": {"name": "Pistol", "ammo": 12, "cooldown": 0.18, "speed": 650.0, "damage": 1, "pellets": 1, "spread": 0.0, "radius": 3.0, "blast": 0.0, "height": -7.0},
+	"cowboy": {"name": "Revolver", "ammo": 6, "cooldown": 0.28, "speed": 800.0, "damage": 1, "pellets": 1, "spread": 0.0, "radius": 3.0, "blast": 0.0, "height": -7.0},
+	"shotgun": {"name": "Shotgun", "ammo": 2, "cooldown": 0.8, "speed": 550.0, "damage": 1, "pellets": 5, "spread": 105.0, "radius": 2.0, "blast": 0.0, "height": -6.0},
+	"sniper": {"name": "Sniper", "ammo": 4, "cooldown": 0.65, "speed": 1300.0, "damage": 2, "pellets": 1, "spread": 0.0, "radius": 2.0, "blast": 0.0, "height": -9.0},
 	"minigun": {"name": "Minigun", "ammo": 36, "cooldown": 0.09, "speed": 750.0, "damage": 1, "pellets": 1, "spread": 0.0, "radius": 2.0, "blast": 0.0, "height": -7.0},
 	"rpg": {"name": "RPG", "ammo": 3, "cooldown": 1.2, "speed": 360.0, "damage": 2, "pellets": 1, "spread": 0.0, "radius": 6.0, "blast": 58.0, "height": -10.0},
-	"paper_weight": {"name": "Paperweight", "ammo": 8, "cooldown": 0.55, "speed": 470.0, "damage": 1, "pellets": 1, "spread": 0.0, "radius": 5.0, "blast": 0.0, "height": -6.0},
+	"paper_weight": {"name": "Paperweight", "ammo": 1, "cooldown": 0.55, "speed": 470.0, "damage": 1, "pellets": 1, "spread": 0.0, "radius": 5.0, "blast": 0.0, "height": -6.0},
 }
 
 const TEXTURES: Dictionary = {

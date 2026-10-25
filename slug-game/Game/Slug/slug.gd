@@ -12,8 +12,10 @@ const DEAD: int = 2
 @export var shoot_interval: float = 0.2
 @export var muzzle_offset: Vector2 = Vector2(24.0, -2.0)
 @export var respawn_delay: float = 3.0
+@export var hit_invulnerability_duration: float = 0.25
 
 var life_state: int = SHELL
+var hit_invulnerability_remaining: float = 0.0
 var death_from_front: bool = false
 var respawn_timer: float = 0.0
 var player_peer_id: int = 1
@@ -57,6 +59,7 @@ func _physics_process(delta: float) -> void:
 	# Only the host simulates bodies; clients receive their state from the synchronizer.
 	if not multiplayer.is_server():
 		return
+	hit_invulnerability_remaining = maxf(hit_invulnerability_remaining - delta, 0.0)
 	if life_state == DEAD:
 		velocity += get_gravity() * delta
 		velocity.x = move_toward(velocity.x, 0.0, friction * delta)
@@ -168,18 +171,19 @@ func _discard_weapon() -> void:
 	_update_weapon_visual()
 
 
-func take_hit(shot_direction: float, shooter_peer_id: int) -> void:
+func take_hit(shot_direction: float, shooter_peer_id: int, damage: int = 1) -> void:
 	if not multiplayer.is_server() or life_state == DEAD or shooter_peer_id == player_peer_id:
 		return
-	var fatal := life_state == NAKED
+	if hit_invulnerability_remaining > 0.0 or damage <= 0:
+		return
+	var fatal := life_state == NAKED or damage >= 2
 	var arena := get_parent().get_parent()
 	if arena != null and arena.has_method("spawn_blood"):
 		arena.spawn_blood(self, shot_direction, fatal)
 	if life_state == SHELL:
 		if arena != null and arena.has_method("spawn_shot_off_shell"):
 			arena.spawn_shot_off_shell(self, shot_direction)
-		life_state = NAKED
-	else:
+	if fatal:
 		_discard_weapon()
 		life_state = DEAD
 		death_from_front = shot_direction * facing_direction < 0.0
@@ -190,12 +194,16 @@ func take_hit(shot_direction: float, shooter_peer_id: int) -> void:
 		jump_cut_requested = false
 		if arena != null and arena.has_method("spawn_severed_head"):
 			arena.spawn_severed_head(self, shot_direction)
+	else:
+		life_state = NAKED
+	hit_invulnerability_remaining = hit_invulnerability_duration
 	_update_appearance()
 
 
 func _respawn() -> void:
 	_discard_weapon()
 	life_state = SHELL
+	hit_invulnerability_remaining = 0.0
 	death_from_front = false
 	position = spawn_point
 	velocity = Vector2.ZERO

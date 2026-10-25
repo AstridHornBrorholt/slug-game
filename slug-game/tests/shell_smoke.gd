@@ -27,7 +27,7 @@ func _run() -> void:
 		_fail("Shell does not launch in the shot direction or blocks players")
 		return
 	var starting_position: Vector2 = shell.position
-	await create_timer(0.25).timeout
+	await create_timer(0.3).timeout
 	if shell.position == starting_position or is_zero_approx(shell.rotation):
 		_fail("Shot-off shell did not fly and spin")
 		return
