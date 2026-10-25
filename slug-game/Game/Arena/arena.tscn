@@ -11,6 +11,7 @@ script = ExtResource("1_arena")
 
 [node name="PlayerCamera" type="Camera2D" parent="." unique_id=1816831993]
 script = ExtResource("2_camera")
+hud_height = 70.0
 
 [node name="Projectiles" type="Node2D" parent="." unique_id=125289001]
 
@@ -73,11 +74,20 @@ tile_map_data = PackedByteArray("AAAAAAAAAgAAAAAAAAABAAAAAwAAAAAAAAACAAAAAgABAAA
 
 [node name="HUD" type="CanvasLayer" parent="." unique_id=835053379]
 
+[node name="MenuBackdrop" type="ColorRect" parent="HUD"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.07, 0.09, 0.13, 0.92)
+
 [node name="Panel" type="PanelContainer" parent="HUD" unique_id=1161348868]
-offset_left = 16.0
-offset_top = 16.0
-offset_right = 576.0
-offset_bottom = 178.0
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -280.0
+offset_top = -175.0
+offset_right = 280.0
+offset_bottom = 175.0
 
 [node name="Margin" type="MarginContainer" parent="HUD/Panel" unique_id=1445427452]
 layout_mode = 2
@@ -95,6 +105,22 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 22
 text = "Slug multiplayer"
 
+[node name="LevelRow" type="HBoxContainer" parent="HUD/Panel/Margin/Content"]
+layout_mode = 2
+
+[node name="LevelLabel" type="Label" parent="HUD/Panel/Margin/Content/LevelRow"]
+layout_mode = 2
+text = "Arena  "
+
+[node name="LevelSelect" type="OptionButton" parent="HUD/Panel/Margin/Content/LevelRow"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="LivesInfo" type="Label" parent="HUD/Panel/Margin/Content"]
+layout_mode = 2
+text = "3 lives per slug. Last slug standing wins."
+
 [node name="Connection" type="HBoxContainer" parent="HUD/Panel/Margin/Content" unique_id=1388281402]
 layout_mode = 2
 theme_override_constants/separation = 8
@@ -104,7 +130,7 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(190, 0)
 layout_mode = 2
 size_flags_horizontal = 3
-tooltip_text = "Use 127.0.0.1 for two instances on this computer, or the host's LAN IP."
+tooltip_text = "Enter the host's Tailscale or LAN IP. Use 127.0.0.1 on one computer."
 text = "127.0.0.1"
 placeholder_text = "Host IP address"
 
@@ -120,12 +146,6 @@ layout_mode = 2
 focus_mode = 0
 text = "Join"
 
-[node name="LeaveButton" type="Button" parent="HUD/Panel/Margin/Content/Connection" unique_id=991382849]
-unique_name_in_owner = true
-layout_mode = 2
-focus_mode = 0
-text = "Disconnect"
-
 [node name="Status" type="Label" parent="HUD/Panel/Margin/Content" unique_id=703465832]
 unique_name_in_owner = true
 layout_mode = 2
@@ -135,3 +155,83 @@ autowrap_mode = 2
 [node name="Controls" type="Label" parent="HUD/Panel/Margin/Content" unique_id=1455019548]
 layout_mode = 2
 text = "Left / Right: move    Up: jump    Walk over a gun    Space: shoot"
+
+[node name="GameBar" type="PanelContainer" parent="HUD"]
+visible = false
+offset_left = 16.0
+offset_top = 16.0
+offset_right = 560.0
+offset_bottom = 58.0
+
+[node name="GameBarContent" type="HBoxContainer" parent="HUD/GameBar"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="GameStatus" type="Label" parent="HUD/GameBar/GameBarContent"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="MenuButton" type="Button" parent="HUD/GameBar/GameBarContent"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Menu (Esc)"
+
+[node name="PauseMenu" type="Control" parent="HUD"]
+visible = false
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="PauseBackdrop" type="ColorRect" parent="HUD/PauseMenu"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.05, 0.06, 0.09, 0.82)
+
+[node name="PausePanel" type="PanelContainer" parent="HUD/PauseMenu"]
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -190.0
+offset_top = -145.0
+offset_right = 190.0
+offset_bottom = 145.0
+
+[node name="PauseMargin" type="MarginContainer" parent="HUD/PauseMenu/PausePanel"]
+layout_mode = 2
+theme_override_constants/margin_left = 18
+theme_override_constants/margin_top = 18
+theme_override_constants/margin_right = 18
+theme_override_constants/margin_bottom = 18
+
+[node name="PauseContent" type="VBoxContainer" parent="HUD/PauseMenu/PausePanel/PauseMargin"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="PauseTitle" type="Label" parent="HUD/PauseMenu/PausePanel/PauseMargin/PauseContent"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 25
+text = "Game menu"
+horizontal_alignment = 1
+
+[node name="PauseControls" type="Label" parent="HUD/PauseMenu/PausePanel/PauseMargin/PauseContent"]
+layout_mode = 2
+text = "Move: Left / Right     Jump: Up\nWalk over a gun to pick it up. Shoot: Space"
+horizontal_alignment = 1
+
+[node name="ResumeButton" type="Button" parent="HUD/PauseMenu/PausePanel/PauseMargin/PauseContent"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Resume"
+
+[node name="RestartButton" type="Button" parent="HUD/PauseMenu/PausePanel/PauseMargin/PauseContent"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "Play again"
+
+[node name="LeaveMatchButton" type="Button" parent="HUD/PauseMenu/PausePanel/PauseMargin/PauseContent"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Leave match"

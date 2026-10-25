@@ -4,6 +4,7 @@ const PROJECTILE_SCENE: PackedScene = preload("res://Game/Projectile/projectile.
 const SHELL: int = 0
 const NAKED: int = 1
 const DEAD: int = 2
+const STARTING_LIVES: int = 3
 
 @export var move_speed: float = 240.0
 @export var acceleration: float = 1800.0
@@ -15,6 +16,7 @@ const DEAD: int = 2
 @export var hit_invulnerability_duration: float = 0.25
 
 var life_state: int = SHELL
+var lives_remaining: int = STARTING_LIVES
 var hit_invulnerability_remaining: float = 0.0
 var death_from_front: bool = false
 var respawn_timer: float = 0.0
@@ -45,9 +47,7 @@ func _ready() -> void:
 	sprite.modulate = Color.WHITE if player_number == 1 else Color.from_hsv(
 		fposmod(0.55 + (player_number - 2) * 0.618034, 1.0), 0.4, 1.0
 	)
-	$PlayerLabel.text = "P%d%s" % [
-		player_number, " (you)" if player_peer_id == multiplayer.get_unique_id() else ""
-	]
+	_update_player_label()
 	if spawn_point == Vector2.ZERO:
 		spawn_point = position
 	_update_appearance()
@@ -65,7 +65,7 @@ func _physics_process(delta: float) -> void:
 		velocity.x = move_toward(velocity.x, 0.0, friction * delta)
 		move_and_slide()
 		respawn_timer -= delta
-		if respawn_timer <= 0.0:
+		if respawn_timer <= 0.0 and lives_remaining > 0:
 			_respawn()
 		return
 
@@ -90,7 +90,7 @@ func _physics_process(delta: float) -> void:
 
 	move_and_slide()
 	if position.y > 1000.0:
-		_respawn()
+		_fall_out()
 
 	shoot_cooldown = maxf(shoot_cooldown - delta, 0.0)
 	if shoot_held and shoot_cooldown <= 0.0 and not weapon_type.is_empty():
@@ -103,6 +103,7 @@ func _process(delta: float) -> void:
 
 
 func _update_appearance() -> void:
+	_update_player_label()
 	sprite.flip_h = facing_direction > 0.0
 	var animation: StringName
 	if life_state == DEAD:
@@ -117,6 +118,13 @@ func _update_appearance() -> void:
 	collision_layer = 0 if life_state == DEAD else 2
 	collision_mask = 1 if life_state == DEAD else 3
 	_update_weapon_visual()
+
+
+func _update_player_label() -> void:
+	$PlayerLabel.text = "P%d%s  Lives %d" % [
+		player_number, " (you)" if player_peer_id == multiplayer.get_unique_id() else "",
+		lives_remaining,
+	]
 
 
 func _update_weapon_visual() -> void:
@@ -184,6 +192,7 @@ func take_hit(shot_direction: float, shooter_peer_id: int, damage: int = 1) -> v
 		if arena != null and arena.has_method("spawn_shot_off_shell"):
 			arena.spawn_shot_off_shell(self, shot_direction)
 	if fatal:
+		lives_remaining = maxi(lives_remaining - 1, 0)
 		_discard_weapon()
 		life_state = DEAD
 		death_from_front = shot_direction * facing_direction < 0.0
@@ -198,6 +207,8 @@ func take_hit(shot_direction: float, shooter_peer_id: int, damage: int = 1) -> v
 		life_state = NAKED
 	hit_invulnerability_remaining = hit_invulnerability_duration
 	_update_appearance()
+	if fatal and lives_remaining == 0 and arena != null and arena.has_method("on_slug_eliminated"):
+		arena.on_slug_eliminated()
 
 
 func _respawn() -> void:
@@ -213,10 +224,30 @@ func _respawn() -> void:
 	_update_appearance()
 
 
+func _fall_out() -> void:
+	lives_remaining = maxi(lives_remaining - 1, 0)
+	if lives_remaining > 0:
+		_respawn()
+		return
+	_discard_weapon()
+	life_state = DEAD
+	respawn_timer = 0.0
+	velocity = Vector2.ZERO
+	_update_appearance()
+	var arena := get_parent().get_parent()
+	if arena != null and arena.has_method("on_slug_eliminated"):
+		arena.on_slug_eliminated()
+
+
 func _read_local_controls() -> void:
 	var direction := Input.get_axis("p1 left", "p1 right")
 	var jumping := Input.is_action_pressed("p1 jump")
 	var shooting := Input.is_action_pressed("p1 act")
+	var arena := get_parent().get_parent()
+	if arena != null and arena.has_method("is_local_menu_open") and arena.is_local_menu_open():
+		direction = 0.0
+		jumping = false
+		shooting = false
 	if multiplayer.is_server():
 		_apply_controls(direction, jumping, shooting)
 	elif direction != last_sent_direction or jumping != last_sent_jump or shooting != last_sent_shoot:

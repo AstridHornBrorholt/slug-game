@@ -5,11 +5,15 @@ A Godot 4.6 2D platformer with ENet multiplayer, supporting three players by def
 ## Play together
 
 1. Open `slug-game/project.godot` and run the main scene.
-2. In the first instance, click **Host** to spawn P1.
+2. In the title menu, choose **Brickworks** or **Cement Yard**, then click **Host** to spawn P1.
 3. Run a second instance, enter `127.0.0.1`, and click **Join** to spawn P2.
    On another computer on the same network, enter the host's LAN IP instead.
 4. A third instance can join the same host to spawn P3. Further attempts display
    **Room full** until someone leaves.
+
+The host's arena choice is sent to joining players. Press **Esc** or click
+**Menu** during a match to see the controls, resume, or leave. This menu stops
+your local slug's controls while the multiplayer match continues.
 
 Each instance controls its own slug with **Left/Right** to move, **Up** to jump,
 and **Space** to fire a held gun. Walk over a weapon on the arena to pick it up.
@@ -32,10 +36,12 @@ Their ammo, rate of fire, and projectile settings are in
 The first ordinary projectile hit shoots the shell off as a spinning, bouncing piece.
 The slug then uses its naked animations. Another hit kills it, plays
 the death animation for the shot's direction, and throws its severed head.
-Heavy shots or several shotgun pellets can cause both hits at once.
+Heavy shots can kill immediately; a quarter second of protection after each hit
+keeps a shotgun blast from dealing more than one hit.
 Each hit produces a short red blood burst; the lethal hit makes a larger burst.
-Dead slugs cannot be controlled or shoot and respawn with their shell after three seconds.
-Slugs also respawn if they fall out of the arena.
+Each slug starts with three lives. Death or falling out costs one life; slugs
+respawn with their shell after three seconds while lives remain. The last slug
+standing wins, and the host can choose **Play again** to restore all lives.
 
 The shared camera follows every player on each instance, with room for sprites,
 labels, and the connection panel. It zooms out immediately when players spread
@@ -57,7 +63,7 @@ so simultaneous join attempts cannot overfill the room.
 If connecting across the Internet, the host needs a reachable address and UDP port forwarding;
 there is no matchmaking or relay service. See [Godot's ENet documentation](https://docs.godotengine.org/en/stable/classes/class_enetmultiplayerpeer.html).
 
-**Disconnect** returns to the connection panel. If a client leaves, its slot opens
+**Leave match** returns to the title menu. If a client leaves, its slot opens
 for a replacement player. If the host leaves, clients can host or join a new game.
 
 ## Networking

@@ -17,6 +17,7 @@ def main():
     success = run_local_case(args.godot, project, "blood_smoke.gd", "BLOOD_SMOKE_PASS")
     success = run_local_case(args.godot, project, "shell_smoke.gd", "SHELL_SMOKE_PASS") and success
     success = run_local_case(args.godot, project, "weapon_smoke.gd", "WEAPON_SMOKE_PASS") and success
+    success = run_local_case(args.godot, project, "menu_levels_smoke.gd", "MENU_LEVELS_SMOKE_PASS") and success
     success = run_case(args.godot, project, "multiplayer_smoke.gd", ("host", "client")) and success
     success = run_case(args.godot, project, "capacity_smoke.gd",
                        ("host", "first", "second", "overflow")) and success

@@ -34,6 +34,9 @@ properties/6/replication_mode = 2
 properties/7/path = NodePath(".:ammo")
 properties/7/spawn = true
 properties/7/replication_mode = 2
+properties/8/path = NodePath(".:lives_remaining")
+properties/8/spawn = true
+properties/8/replication_mode = 2
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_txaus"]
 atlas = ExtResource("2_txlkp")

@@ -8,6 +8,8 @@ const SHOT_OFF_SHELL_SCENE: PackedScene = preload("res://Game/ShotOffShell/shot_
 const WEAPON_PICKUP_SCENE: PackedScene = preload("res://Game/Weapons/weapon_pickup.tscn")
 const DROPPED_GUN_SCENE: PackedScene = preload("res://Game/Weapons/dropped_gun.tscn")
 const EXPLOSION_SCENE: PackedScene = preload("res://Game/Weapons/explosion_burst.tscn")
+const CEMENT_YARD_SCENE: PackedScene = preload("res://Game/Environment/Environment/cement_yard.tscn")
+const STARTING_LIVES: int = 3
 
 @export_range(1, 4095) var max_players: int = 3
 @export_range(1024, 65535) var port: int = 7000
@@ -26,6 +28,9 @@ var room_capacity: int = 3
 var local_player_number: int = 1
 var session_joined: bool = false
 var rejection_message: String = ""
+var selected_level_id: int = 0
+var original_map_data: PackedByteArray
+var round_over: bool = false
 
 @onready var players: Node2D = $Players
 @onready var projectiles: Node2D = $Projectiles
@@ -38,6 +43,7 @@ var rejection_message: String = ""
 @onready var drop_spawner: MultiplayerSpawner = $DropSpawner
 @onready var explosion_spawner: MultiplayerSpawner = $ExplosionSpawner
 @onready var status: Label = %Status
+@onready var environment_map: TileMapLayer = $EnvironmentMap
 
 
 func _ready() -> void:
@@ -60,7 +66,13 @@ func _ready() -> void:
 	multiplayer.server_disconnected.connect(_on_server_disconnected)
 	%HostButton.pressed.connect(host_game)
 	%JoinButton.pressed.connect(func(): join_game(%Address.text))
-	%LeaveButton.pressed.connect(func(): leave_game())
+	%MenuButton.pressed.connect(_open_pause_menu)
+	%ResumeButton.pressed.connect(_close_pause_menu)
+	%LeaveMatchButton.pressed.connect(func(): leave_game())
+	%RestartButton.pressed.connect(_restart_round)
+	%LevelSelect.add_item("Brickworks", 0)
+	%LevelSelect.add_item("Cement Yard", 1)
+	original_map_data = environment_map.tile_map_data.duplicate()
 	players.child_order_changed.connect(_update_status)
 	_set_session_active(false)
 	status.text = "Host a game, or enter an IP and join. %d players maximum." % max_players
@@ -74,11 +86,14 @@ func host_game() -> void:
 		status.text = "Could not host on port %d: %s" % [port, error_string(error)]
 		return
 	multiplayer.multiplayer_peer = peer
+	selected_level_id = %LevelSelect.selected
+	_apply_level(selected_level_id)
 	room_capacity = clampi(max_players, 1, 4095)
 	local_player_number = 1
 	peer_slots = {1: 0}
 	session_joined = true
 	rejection_message = ""
+	round_over = false
 	_set_session_active(true)
 	player_spawner.spawn({"peer_id": 1, "slot": 0, "capacity": room_capacity})
 	for slot in range($WeaponSpawnPoints.get_child_count()):
@@ -104,6 +119,7 @@ func join_game(address: String) -> void:
 
 func leave_game(message: String = "Disconnected. Host or join another game.") -> void:
 	session_joined = false
+	round_over = false
 	multiplayer.multiplayer_peer.close()
 	multiplayer.multiplayer_peer = OfflineMultiplayerPeer.new()
 	peer_slots.clear()
@@ -134,8 +150,101 @@ func _set_session_active(active: bool) -> void:
 	%HostButton.disabled = active
 	%JoinButton.disabled = active
 	%Address.editable = not active
+	%LevelSelect.disabled = active
 	%Address.release_focus()
-	%LeaveButton.disabled = not active
+	$HUD/MenuBackdrop.visible = not active
+	$HUD/Panel.visible = not active
+	$HUD/GameBar.visible = active
+	$HUD/PauseMenu.visible = false
+	%ResumeButton.visible = true
+	%RestartButton.visible = false
+
+
+func _unhandled_input(event: InputEvent) -> void:
+	if session_joined and not round_over and event.is_action_pressed("ui_cancel"):
+		if $HUD/PauseMenu.visible:
+			_close_pause_menu()
+		else:
+			_open_pause_menu()
+		get_viewport().set_input_as_handled()
+
+
+func _process(_delta: float) -> void:
+	if session_joined:
+		_update_status()
+
+
+func is_local_menu_open() -> bool:
+	return $HUD/PauseMenu.visible
+
+
+func _open_pause_menu() -> void:
+	if not session_joined or round_over:
+		return
+	%PauseTitle.text = "Game menu"
+	$HUD/PauseMenu.visible = true
+	%ResumeButton.grab_focus()
+
+
+func _close_pause_menu() -> void:
+	if round_over:
+		return
+	$HUD/PauseMenu.visible = false
+	%MenuButton.grab_focus()
+
+
+func _apply_level(level_id: int) -> void:
+	selected_level_id = clampi(level_id, 0, 1)
+	if selected_level_id == 0:
+		environment_map.tile_map_data = original_map_data.duplicate()
+	else:
+		var map: TileMapLayer = CEMENT_YARD_SCENE.instantiate()
+		environment_map.tile_map_data = map.tile_map_data.duplicate()
+		map.free()
+
+
+func on_slug_eliminated() -> void:
+	if not multiplayer.is_server() or round_over:
+		return
+	var survivors: Array[Node] = []
+	for player in players.get_children():
+		if player.lives_remaining > 0 and not player.is_queued_for_deletion():
+			survivors.append(player)
+	if survivors.size() == 1:
+		_show_round_result.rpc("P%d wins!" % survivors[0].player_number)
+	elif survivors.is_empty():
+		_show_round_result.rpc("No slugs left!")
+
+
+@rpc("authority", "call_local", "reliable")
+func _show_round_result(result: String) -> void:
+	round_over = true
+	%PauseTitle.text = result
+	%ResumeButton.visible = false
+	%RestartButton.visible = multiplayer.is_server()
+	$HUD/PauseMenu.visible = true
+	if multiplayer.is_server():
+		%RestartButton.grab_focus()
+	else:
+		%LeaveMatchButton.grab_focus()
+
+
+func _restart_round() -> void:
+	if not multiplayer.is_server() or not round_over:
+		return
+	for player in players.get_children():
+		player.lives_remaining = STARTING_LIVES
+		player._respawn()
+	_round_restarted.rpc()
+	_update_status()
+
+
+@rpc("authority", "call_local", "reliable")
+func _round_restarted() -> void:
+	round_over = false
+	$HUD/PauseMenu.visible = false
+	%ResumeButton.visible = true
+	%RestartButton.visible = false
 
 
 func _on_peer_connected(peer_id: int) -> void:
@@ -156,6 +265,9 @@ func _on_auth_data(peer_id: int, data: PackedByteArray) -> void:
 	if multiplayer.is_server():
 		if message != "join" or peer_slots.has(peer_id):
 			return
+		if round_over:
+			multiplayer.send_auth(peer_id, "ended".to_utf8_buffer())
+			return
 		var slot := -1
 		for candidate in range(room_capacity):
 			if not peer_slots.values().has(candidate):
@@ -166,16 +278,22 @@ func _on_auth_data(peer_id: int, data: PackedByteArray) -> void:
 			return
 		# Reserve immediately, including peers still completing the handshake.
 		peer_slots[peer_id] = slot
-		multiplayer.send_auth(peer_id, ("accepted:%d:%d" % [slot + 1, room_capacity]).to_utf8_buffer())
+		multiplayer.send_auth(peer_id, ("accepted:%d:%d:%d" % [
+			slot + 1, room_capacity, selected_level_id,
+		]).to_utf8_buffer())
 		multiplayer.complete_auth(peer_id)
 	elif peer_id == 1:
 		var parts := message.split(":")
 		if parts.size() == 2 and parts[0] == "full":
 			rejection_message = "Room full (%s players maximum). Try again when someone leaves." % parts[1]
 			leave_game.call_deferred(rejection_message)
-		elif parts.size() == 3 and parts[0] == "accepted":
+		elif message == "ended":
+			rejection_message = "That round has ended. Ask the host to start a new one."
+			leave_game.call_deferred(rejection_message)
+		elif parts.size() == 4 and parts[0] == "accepted":
 			local_player_number = int(parts[1])
 			room_capacity = int(parts[2])
+			_apply_level(int(parts[3]))
 			multiplayer.complete_auth(1)
 
 
@@ -188,10 +306,13 @@ func _on_authentication_failed(peer_id: int) -> void:
 
 func _update_status() -> void:
 	if session_joined and is_inside_tree() and multiplayer != null:
-		status.text = "%s | %d/%d players | You are P%d" % [
+		var local_player := players.get_node_or_null(str(multiplayer.get_unique_id()))
+		var lives: int = local_player.lives_remaining if local_player != null else STARTING_LIVES
+		status.text = "%s | %d/%d players | You are P%d | Lives: %d" % [
 			"Hosting on port %d" % port if multiplayer.is_server() else "Connected",
-			players.get_child_count(), room_capacity, local_player_number,
+			players.get_child_count(), room_capacity, local_player_number, lives,
 		]
+		%GameStatus.text = status.text
 
 
 func _on_peer_disconnected(peer_id: int) -> void:
