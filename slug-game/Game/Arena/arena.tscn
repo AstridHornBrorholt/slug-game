@@ -1,15 +1,25 @@
 [gd_scene format=3 uid="uid://5y5rwn85amuh"]
 
-[ext_resource type="PackedScene" uid="uid://cexmpscvgw5er" path="res://Game/Slug/slug.tscn" id="1_4c4f0"]
+[ext_resource type="Script" path="res://Game/Arena/arena.gd" id="1_arena"]
 [ext_resource type="Texture2D" uid="uid://cylvemn5kkvc5" path="res://icon.svg" id="3_7r5s0"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_stu04"]
 size = Vector2(445, 75)
 
 [node name="Arena" type="Node2D" unique_id=507994696]
+script = ExtResource("1_arena")
 
-[node name="CharacterBody2D" parent="." unique_id=505334421 instance=ExtResource("1_4c4f0")]
-position = Vector2(564, 296)
+[node name="Players" type="Node2D" parent="."]
+
+[node name="Projectiles" type="Node2D" parent="."]
+
+[node name="PlayerSpawner" type="MultiplayerSpawner" parent="."]
+spawn_path = NodePath("../Players")
+spawn_limit = 2
+
+[node name="ProjectileSpawner" type="MultiplayerSpawner" parent="."]
+spawn_path = NodePath("../Projectiles")
+spawn_limit = 64
 
 [node name="Ground" type="StaticBody2D" parent="." unique_id=1573646087]
 position = Vector2(584, 439)
@@ -22,3 +32,68 @@ texture = ExtResource("3_7r5s0")
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Ground" unique_id=2063742144]
 position = Vector2(-1.5, 10.5)
 shape = SubResource("RectangleShape2D_stu04")
+
+[node name="HUD" type="CanvasLayer" parent="."]
+
+[node name="Panel" type="PanelContainer" parent="HUD"]
+offset_left = 16.0
+offset_top = 16.0
+offset_right = 576.0
+offset_bottom = 178.0
+
+[node name="Margin" type="MarginContainer" parent="HUD/Panel"]
+layout_mode = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 10
+
+[node name="Content" type="VBoxContainer" parent="HUD/Panel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Title" type="Label" parent="HUD/Panel/Margin/Content"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "Two slugs"
+
+[node name="Connection" type="HBoxContainer" parent="HUD/Panel/Margin/Content"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Address" type="LineEdit" parent="HUD/Panel/Margin/Content/Connection"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(190, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "127.0.0.1"
+placeholder_text = "Host IP address"
+tooltip_text = "Use 127.0.0.1 for two instances on this computer, or the host's LAN IP."
+
+[node name="HostButton" type="Button" parent="HUD/Panel/Margin/Content/Connection"]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 0
+text = "Host"
+
+[node name="JoinButton" type="Button" parent="HUD/Panel/Margin/Content/Connection"]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 0
+text = "Join"
+
+[node name="LeaveButton" type="Button" parent="HUD/Panel/Margin/Content/Connection"]
+unique_name_in_owner = true
+layout_mode = 2
+focus_mode = 0
+text = "Disconnect"
+
+[node name="Status" type="Label" parent="HUD/Panel/Margin/Content"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Host a game, or enter an IP and join. Two players maximum."
+autowrap_mode = 2
+
+[node name="Controls" type="Label" parent="HUD/Panel/Margin/Content"]
+layout_mode = 2
+text = "Left / Right: move    Up: jump    Space: shoot"
