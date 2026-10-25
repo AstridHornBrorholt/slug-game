@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cpb182giaxltj"
-path="res://.godot/imported/Pasted image.png-b6a3104ed65164bd89e717a590dd4899.ctex"
+uid="uid://ddv2cychc6f7a"
+path="res://.godot/imported/Slug-Dead-Shot-From-Front.png-d67fed1db9dc67337bdcc3aaf6876d48.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Game/Slug/Pasted image.png"
-dest_files=["res://.godot/imported/Pasted image.png-b6a3104ed65164bd89e717a590dd4899.ctex"]
+source_file="res://Game/Slug/Slug-Dead-Shot-From-Front.png"
+dest_files=["res://.godot/imported/Slug-Dead-Shot-From-Front.png-d67fed1db9dc67337bdcc3aaf6876d48.ctex"]
 
 [params]
 

@@ -1,6 +1,9 @@
 extends CharacterBody2D
 
 const PROJECTILE_SCENE: PackedScene = preload("res://Game/Projectile/projectile.tscn")
+const SHELL: int = 0
+const NAKED: int = 1
+const DEAD: int = 2
 
 @export var move_speed: float = 240.0
 @export var acceleration: float = 1800.0
@@ -8,7 +11,11 @@ const PROJECTILE_SCENE: PackedScene = preload("res://Game/Projectile/projectile.
 @export var jump_velocity: float = -400.0
 @export var shoot_interval: float = 0.2
 @export var muzzle_offset: Vector2 = Vector2(24.0, -2.0)
+@export var respawn_delay: float = 3.0
 
+var life_state: int = SHELL
+var death_from_front: bool = false
+var respawn_timer: float = 0.0
 var player_peer_id: int = 1
 var player_number: int = 1
 var spawn_point: Vector2 = Vector2.ZERO
@@ -27,12 +34,15 @@ var last_sent_shoot: bool = false
 
 
 func _ready() -> void:
-	sprite.modulate = Color.WHITE if player_number == 1 else Color("97d9ff")
+	sprite.modulate = Color.WHITE if player_number == 1 else Color.from_hsv(
+		fposmod(0.55 + (player_number - 2) * 0.618034, 1.0), 0.4, 1.0
+	)
 	$PlayerLabel.text = "P%d%s" % [
 		player_number, " (you)" if player_peer_id == multiplayer.get_unique_id() else ""
 	]
 	if spawn_point == Vector2.ZERO:
 		spawn_point = position
+	_update_appearance()
 
 
 func _physics_process(delta: float) -> void:
@@ -40,6 +50,14 @@ func _physics_process(delta: float) -> void:
 		_read_local_controls()
 	# Only the host simulates bodies; clients receive their state from the synchronizer.
 	if not multiplayer.is_server():
+		return
+	if life_state == DEAD:
+		velocity += get_gravity() * delta
+		velocity.x = move_toward(velocity.x, 0.0, friction * delta)
+		move_and_slide()
+		respawn_timer -= delta
+		if respawn_timer <= 0.0:
+			_respawn()
 		return
 
 	if not is_on_floor():
@@ -58,14 +76,12 @@ func _physics_process(delta: float) -> void:
 	if direction != 0.0:
 		velocity.x = move_toward(velocity.x, direction * move_speed, acceleration * delta)
 		facing_direction = direction
-		sprite.flip_h = direction > 0.0
 	else:
 		velocity.x = move_toward(velocity.x, 0.0, friction * delta)
 
 	move_and_slide()
 	if position.y > 1000.0:
-		position = spawn_point
-		velocity = Vector2.ZERO
+		_respawn()
 
 	shoot_cooldown = maxf(shoot_cooldown - delta, 0.0)
 	if shoot_held and shoot_cooldown <= 0.0:
@@ -74,7 +90,52 @@ func _physics_process(delta: float) -> void:
 
 
 func _process(_delta: float) -> void:
+	_update_appearance()
+
+
+func _update_appearance() -> void:
 	sprite.flip_h = facing_direction > 0.0
+	var animation: StringName
+	if life_state == DEAD:
+		animation = &"Dead from Front" if death_from_front else &"Dead from Behind"
+	else:
+		var state := "Naked" if life_state == NAKED else "Shell"
+		animation = StringName("%s %s" % [state, "Move" if absf(velocity.x) > 5.0 else "Stop"])
+	if sprite.animation != animation or not sprite.is_playing():
+		sprite.play(animation)
+	$PlayerLabel.visible = life_state != DEAD
+	collision_layer = 0 if life_state == DEAD else 2
+	collision_mask = 1 if life_state == DEAD else 3
+
+
+func take_hit(shot_direction: float, shooter_peer_id: int) -> void:
+	if not multiplayer.is_server() or life_state == DEAD or shooter_peer_id == player_peer_id:
+		return
+	if life_state == SHELL:
+		life_state = NAKED
+	else:
+		life_state = DEAD
+		death_from_front = shot_direction * facing_direction < 0.0
+		respawn_timer = respawn_delay
+		velocity.x = 0.0
+		shoot_held = false
+		jump_requested = false
+		jump_cut_requested = false
+		var arena := get_parent().get_parent()
+		if arena != null and arena.has_method("spawn_severed_head"):
+			arena.spawn_severed_head(self, shot_direction)
+	_update_appearance()
+
+
+func _respawn() -> void:
+	life_state = SHELL
+	death_from_front = false
+	position = spawn_point
+	velocity = Vector2.ZERO
+	jump_requested = false
+	jump_cut_requested = false
+	shoot_cooldown = shoot_interval
+	_update_appearance()
 
 
 func _read_local_controls() -> void:
@@ -111,6 +172,8 @@ func _apply_controls(direction: float, jumping: bool, shooting: bool) -> void:
 
 
 func shoot() -> void:
+	if life_state == DEAD:
+		return
 	var arena := get_parent().get_parent()
 	if arena != null and arena.has_method("spawn_projectile"):
 		arena.spawn_projectile(self)

@@ -31,4 +31,7 @@ func _physics_process(delta: float) -> void:
 	launch_offset = Vector2.ZERO
 	var collision := move_and_collide(motion)
 	if collision:
+		var target := collision.get_collider()
+		if target != null and target.has_method("take_hit"):
+			target.take_hit(direction, shooter_peer_id)
 		queue_free()

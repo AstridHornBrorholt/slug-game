@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://5y5rwn85amuh"]
 
 [ext_resource type="Script" path="res://Game/Arena/arena.gd" id="1_arena"]
+[ext_resource type="Script" path="res://Game/Arena/player_camera.gd" id="2_camera"]
 [ext_resource type="Texture2D" uid="uid://cylvemn5kkvc5" path="res://icon.svg" id="3_7r5s0"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_stu04"]
@@ -11,14 +12,22 @@ script = ExtResource("1_arena")
 
 [node name="Players" type="Node2D" parent="."]
 
+[node name="PlayerCamera" type="Camera2D" parent="."]
+script = ExtResource("2_camera")
+
 [node name="Projectiles" type="Node2D" parent="."]
+
+[node name="SeveredHeads" type="Node2D" parent="."]
 
 [node name="PlayerSpawner" type="MultiplayerSpawner" parent="."]
 spawn_path = NodePath("../Players")
-spawn_limit = 2
 
 [node name="ProjectileSpawner" type="MultiplayerSpawner" parent="."]
 spawn_path = NodePath("../Projectiles")
+spawn_limit = 64
+
+[node name="HeadSpawner" type="MultiplayerSpawner" parent="."]
+spawn_path = NodePath("../SeveredHeads")
 spawn_limit = 64
 
 [node name="Ground" type="StaticBody2D" parent="." unique_id=1573646087]
@@ -55,7 +64,7 @@ theme_override_constants/separation = 8
 [node name="Title" type="Label" parent="HUD/Panel/Margin/Content"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 22
-text = "Two slugs"
+text = "Slug multiplayer"
 
 [node name="Connection" type="HBoxContainer" parent="HUD/Panel/Margin/Content"]
 layout_mode = 2
@@ -91,7 +100,7 @@ text = "Disconnect"
 [node name="Status" type="Label" parent="HUD/Panel/Margin/Content"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Host a game, or enter an IP and join. Two players maximum."
+text = "Host a game, or enter an IP and join."
 autowrap_mode = 2
 
 [node name="Controls" type="Label" parent="HUD/Panel/Margin/Content"]

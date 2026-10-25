@@ -32,6 +32,7 @@ func _process(_delta: float) -> bool:
 func _run() -> void:
 	arena = load("res://Game/Arena/arena.tscn").instantiate()
 	root.add_child(arena)
+	arena.port = int(OS.get_environment("SLUG_TEST_PORT"))
 	if "--host" in OS.get_cmdline_user_args():
 		await _test_host()
 	else:
@@ -47,6 +48,7 @@ func _run() -> void:
 
 
 func _test_host() -> void:
+	arena.max_players = 2
 	arena.host_game()
 	_check(arena.players.get_child_count() == 1, "Host should spawn P1 immediately")
 	if not await _wait_until(func(): return arena.players.get_child_count() == 2):
