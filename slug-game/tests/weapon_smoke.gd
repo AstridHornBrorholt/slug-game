@@ -107,6 +107,30 @@ func _run() -> void:
 	if slug.life_state != slug.SHELL or arena.get_node("Explosions").get_child_count() == 0:
 		_fail("RPG failed to show an explosion or protected its shooter incorrectly")
 		return
+	for projectile in arena.projectiles.get_children():
+		projectile.free()
+	victim._respawn()
+	victim.position = Vector2(575, 405)
+	slug._discard_weapon()
+	slug.equip_weapon("shotgun")
+	slug.shoot()
+	if not await _wait_until(func(): return victim.life_state == victim.NAKED):
+		_fail("Shotgun pellets did not strip the shell")
+		return
+	await create_timer(0.1).timeout
+	if victim.life_state != victim.NAKED:
+		_fail("One shotgun blast dealt more than one hit")
+		return
+	if victim.hit_invulnerability_remaining <= 0.0:
+		_fail("Shotgun hit did not grant temporary protection")
+		return
+	if not await _wait_until(func(): return victim.hit_invulnerability_remaining <= 0.0):
+		_fail("Hit protection did not expire")
+		return
+	victim.take_hit(1.0, slug.player_peer_id)
+	if victim.life_state != victim.DEAD:
+		_fail("Slug remained protected after the quarter second")
+		return
 	print("WEAPON_SMOKE_PASS")
 	quit(0)
 

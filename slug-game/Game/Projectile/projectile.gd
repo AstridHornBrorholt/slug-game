@@ -43,8 +43,7 @@ func _physics_process(delta: float) -> void:
 		if blast_radius > 0.0:
 			_explode(collision.get_position())
 		elif target != null and target.has_method("take_hit"):
-			for hit in range(damage):
-				target.take_hit(direction, shooter_peer_id)
+			target.take_hit(direction, shooter_peer_id, damage)
 		queue_free()
 
 
@@ -57,5 +56,4 @@ func _explode(impact_position: Vector2) -> void:
 		if player.player_peer_id == shooter_peer_id:
 			continue
 		if player.global_position.distance_to(impact_position) <= blast_radius:
-			for hit in range(damage):
-				player.take_hit(direction, shooter_peer_id)
+			player.take_hit(direction, shooter_peer_id, damage)
