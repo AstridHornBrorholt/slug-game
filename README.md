@@ -42,6 +42,12 @@ labels, and the connection panel. It zooms out immediately when players spread
 apart and eases back in as they regroup. Padding, maximum zoom, follow speed,
 and HUD clearance are configurable on the Arena's `PlayerCamera` node.
 
+The arena's editable `EnvironmentMap` TileMapLayer is in
+`Game/Environment/Environment`. Its TileSet contains all 23 terrain sheets in
+that folder as 16×16 atlas tiles. Solid terrain tiles have collision shapes, so
+painting or erasing them changes both the visible map and the playable ground.
+The fence tiles remain decorative.
+
 The game accepts one host and two clients on **UDP port 7000** by default. Change
 **Max Players** or **Port** on the Arena node in the Inspector to configure the room,
 including the host (1–4095). Player slots, labels, colors, and spawn points adapt

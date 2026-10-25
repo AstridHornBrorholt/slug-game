@@ -1,149 +1,137 @@
-[gd_scene format=3 uid="uid://5y5rwn85amuh"]
+[gd_scene format=4 uid="uid://5y5rwn85amuh"]
 
-[ext_resource type="Script" path="res://Game/Arena/arena.gd" id="1_arena"]
-[ext_resource type="Script" path="res://Game/Arena/player_camera.gd" id="2_camera"]
-[ext_resource type="Texture2D" uid="uid://cylvemn5kkvc5" path="res://icon.svg" id="3_7r5s0"]
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_stu04"]
-size = Vector2(445, 75)
+[ext_resource type="Script" uid="uid://b5ey6uscb7m42" path="res://Game/Arena/arena.gd" id="1_arena"]
+[ext_resource type="Script" uid="uid://cv3x7owju1t5r" path="res://Game/Arena/player_camera.gd" id="2_camera"]
+[ext_resource type="PackedScene" path="res://Game/Environment/Environment/environment_map.tscn" id="3_environment"]
 
 [node name="Arena" type="Node2D" unique_id=507994696]
 script = ExtResource("1_arena")
 
-[node name="Players" type="Node2D" parent="."]
+[node name="Players" type="Node2D" parent="." unique_id=1711050437]
 
-[node name="PlayerCamera" type="Camera2D" parent="."]
+[node name="PlayerCamera" type="Camera2D" parent="." unique_id=1816831993]
 script = ExtResource("2_camera")
 
-[node name="Projectiles" type="Node2D" parent="."]
+[node name="Projectiles" type="Node2D" parent="." unique_id=125289001]
 
-[node name="SeveredHeads" type="Node2D" parent="."]
+[node name="SeveredHeads" type="Node2D" parent="." unique_id=1813757339]
 
-[node name="BloodBursts" type="Node2D" parent="."]
+[node name="BloodBursts" type="Node2D" parent="." unique_id=1099960566]
 
-[node name="ShotOffShells" type="Node2D" parent="."]
+[node name="ShotOffShells" type="Node2D" parent="." unique_id=1990906651]
 
-[node name="WeaponPickups" type="Node2D" parent="."]
+[node name="WeaponPickups" type="Node2D" parent="." unique_id=557714065]
 
-[node name="DroppedGuns" type="Node2D" parent="."]
+[node name="DroppedGuns" type="Node2D" parent="." unique_id=1846554679]
 
-[node name="Explosions" type="Node2D" parent="."]
+[node name="Explosions" type="Node2D" parent="." unique_id=1918113199]
 
-[node name="WeaponSpawnPoints" type="Node2D" parent="."]
+[node name="WeaponSpawnPoints" type="Node2D" parent="." unique_id=1123541937]
 
-[node name="WeaponRespawnTimers" type="Node" parent="."]
-
-[node name="Left" type="Marker2D" parent="WeaponSpawnPoints"]
+[node name="Left" type="Marker2D" parent="WeaponSpawnPoints" unique_id=446371681]
 position = Vector2(430, 396)
 
-[node name="Center" type="Marker2D" parent="WeaponSpawnPoints"]
+[node name="Center" type="Marker2D" parent="WeaponSpawnPoints" unique_id=30541353]
 position = Vector2(585, 396)
 
-[node name="Right" type="Marker2D" parent="WeaponSpawnPoints"]
-position = Vector2(740, 396)
+[node name="Right" type="Marker2D" parent="WeaponSpawnPoints" unique_id=481232167]
+position = Vector2(755, 357)
 
-[node name="PlayerSpawner" type="MultiplayerSpawner" parent="."]
+[node name="WeaponRespawnTimers" type="Node" parent="." unique_id=1416842841]
+
+[node name="PlayerSpawner" type="MultiplayerSpawner" parent="." unique_id=1219374883]
 spawn_path = NodePath("../Players")
 
-[node name="ProjectileSpawner" type="MultiplayerSpawner" parent="."]
+[node name="ProjectileSpawner" type="MultiplayerSpawner" parent="." unique_id=1125129836]
 spawn_path = NodePath("../Projectiles")
 
-[node name="HeadSpawner" type="MultiplayerSpawner" parent="."]
+[node name="HeadSpawner" type="MultiplayerSpawner" parent="." unique_id=1808699785]
 spawn_path = NodePath("../SeveredHeads")
 spawn_limit = 64
 
-[node name="BloodSpawner" type="MultiplayerSpawner" parent="."]
+[node name="BloodSpawner" type="MultiplayerSpawner" parent="." unique_id=1295888366]
 spawn_path = NodePath("../BloodBursts")
 spawn_limit = 64
 
-[node name="ShellSpawner" type="MultiplayerSpawner" parent="."]
+[node name="ShellSpawner" type="MultiplayerSpawner" parent="." unique_id=828629441]
 spawn_path = NodePath("../ShotOffShells")
 spawn_limit = 64
 
-[node name="WeaponSpawner" type="MultiplayerSpawner" parent="."]
+[node name="WeaponSpawner" type="MultiplayerSpawner" parent="." unique_id=920548457]
 spawn_path = NodePath("../WeaponPickups")
 
-[node name="DropSpawner" type="MultiplayerSpawner" parent="."]
+[node name="DropSpawner" type="MultiplayerSpawner" parent="." unique_id=371536797]
 spawn_path = NodePath("../DroppedGuns")
 spawn_limit = 64
 
-[node name="ExplosionSpawner" type="MultiplayerSpawner" parent="."]
+[node name="ExplosionSpawner" type="MultiplayerSpawner" parent="." unique_id=321422601]
 spawn_path = NodePath("../Explosions")
 spawn_limit = 64
 
-[node name="Ground" type="StaticBody2D" parent="." unique_id=1573646087]
-position = Vector2(584, 439)
+[node name="EnvironmentMap" parent="." unique_id=560715777 instance=ExtResource("3_environment")]
+tile_map_data = PackedByteArray("AAAAAAAAAgAAAAAAAAABAAAAAwAAAAAAAAACAAAAAgABAAAAAAADAAAAAgABAAAAAAAEAAAAAgABAAAAAAAFAAAAAgABAAAAAAAGAAAAAgABAAAAAAAHAAAAAgABAAAAAAAIAAAAAgABAAAAAAAJAAAAAgABAAAAAAAKAAAAAgABAAAAAAALAAAAAgABAAAAAAAMAAAAAgABAAAAAAANAAAAAgABAAAAAAAOAAAAAgABAAAAAAAPAAAAAgABAAAAAAAQAAAAAgABAAAAAAARAAAAAgABAAAAAAASAAAAAgABAAAAAAATAAAAAgABAAAAAAAUAAAAAgABAAAAAAAVAAAAAgABAAAAAAAWAAAAAgABAAAAAAAXAAAAAgABAAAAAAAYAAAAAgABAAAAAAAZAAAAAgABAAAAAAAaAAAAAgABAAAAAAAbAAAAAgACAAAAAAAAAAEAAgAAAAEAAAABAAEAAgABAAEAAAACAAEAAgABAAEAAAADAAEAAgABAAEAAAAEAAEAAgABAAEAAAAFAAEAAgABAAEAAAAGAAEAAgABAAEAAAAHAAEAAgABAAEAAAAIAAEAAwAAAAAAAAAJAAEAAgABAAEAAAAKAAEAAgABAAEAAAALAAEAAgABAAEAAAAMAAEAAwAAAAAAAAANAAEAAgABAAEAAAAOAAEAAgABAAEAAAAPAAEAAgABAAEAAAAQAAEAAgABAAEAAAARAAEAAgABAAEAAAASAAEAAgABAAEAAAATAAEAAgABAAEAAAAUAAEAAgABAAEAAAAVAAEAAgABAAEAAAAWAAEAAgABAAEAAAAXAAEAAgABAAEAAAAYAAEAAgABAAEAAAAZAAEAAgABAAEAAAAaAAEAAgABAAEAAAAbAAEAAgACAAEAAAAAAAIAAgAAAAEAAAABAAIAAwAAAAAAAAACAAIAAwAAAAAAAAADAAIAAwAAAAAAAAAEAAIAAwAAAAAAAAAFAAIAAwAAAAAAAAAGAAIAAwAAAAAAAAAHAAIAAwAAAAAAAAAIAAIAAwAAAAAAAAAJAAIAAwAAAAAAAAAKAAIAAwAAAAAAAAALAAIAAwAAAAAAAAAMAAIAAgABAAEAAAANAAIAAwAAAAAAAAAOAAIAAwAAAAAAAAAPAAIAAwAAAAAAAAAQAAIAAwAAAAAAAAARAAIAAwAAAAAAAAASAAIAAwAAAAAAAAATAAIAAgABAAEAAAAUAAIAAwAAAAAAAAAVAAIAAwAAAAAAAAAWAAIAAwAAAAAAAAAXAAIAAwAAAAAAAAAYAAIAAgABAAEAAAAZAAIAAgABAAEAAAAaAAIAAgABAAEAAAAbAAIAAgACAAEAAAAAAAMAAgAAAAEAAAABAAMAAgABAAEAAAACAAMAAgABAAEAAAADAAMAAgABAAEAAAAEAAMAAgABAAEAAAAFAAMAAgABAAEAAAAGAAMAAgABAAEAAAAHAAMAAgABAAEAAAAIAAMAAwAAAAAAAAAJAAMAAgABAAEAAAAKAAMAAgABAAEAAAALAAMAAgABAAEAAAAMAAMAAgABAAEAAAANAAMAAgABAAEAAAAOAAMAAgABAAEAAAAPAAMAAgABAAEAAAAQAAMAAgABAAEAAAARAAMAAgABAAEAAAASAAMAAwAAAAAAAAATAAMAAwAAAAAAAAAUAAMAAwAAAAAAAAAVAAMAAgABAAEAAAAWAAMAAgABAAEAAAAXAAMAAgABAAEAAAAYAAMAAgABAAEAAAAZAAMAAgABAAEAAAAaAAMAAgABAAEAAAAbAAMAAgACAAEAAAAAAAQAAgAAAAIAAAABAAQAAgABAAIAAAACAAQAAgABAAIAAAADAAQAAgABAAIAAAAEAAQAAgABAAIAAAAFAAQAAgABAAIAAAAGAAQAAgABAAIAAAAHAAQAAgABAAIAAAAIAAQAAgABAAIAAAAJAAQAAgABAAIAAAAKAAQAAgABAAIAAAALAAQAAgABAAIAAAAMAAQAAgABAAIAAAANAAQAAgABAAIAAAAOAAQAAgABAAIAAAAPAAQAAgABAAIAAAAQAAQAAgABAAIAAAARAAQAAgABAAIAAAASAAQAAgABAAIAAAATAAQAAgABAAIAAAAUAAQAAgABAAIAAAAVAAQAAgABAAIAAAAWAAQAAgABAAIAAAAXAAQAAgABAAIAAAAYAAQAAgABAAIAAAAZAAQAAgABAAIAAAAaAAQAAgABAAIAAAAbAAQAAgACAAIAAAABAP//AwAAAAAAAAABAP7/AwAAAAAAAAABAP3/AwAAAAAAAAAXAP//AwAAAAAAAAAWAP//AwAAAAAAAAAVAP//AwAAAAAAAAAUAP//AwAAAAAAAAAVAP7/AwAAAAAAAAAWAP7/AwAAAAAAAAAXAP7/AwAAAAAAAAAYAP7/AwAAAAAAAAAZAP7/AwAAAAAAAAAYAP//AwAAAAAAAAAZAP//AwAAAAAAAAAaAP//AwAAAAAAAAAbAP//AwAAAAAAAAAbAP7/AwAAAAAAAAAaAP7/AwAAAAAAAAA=")
 
-[node name="Icon" type="Sprite2D" parent="Ground" unique_id=2017068635]
-position = Vector2(1, 5)
-scale = Vector2(3.578125, 0.5234375)
-texture = ExtResource("3_7r5s0")
+[node name="HUD" type="CanvasLayer" parent="." unique_id=835053379]
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Ground" unique_id=2063742144]
-position = Vector2(-1.5, 10.5)
-shape = SubResource("RectangleShape2D_stu04")
-
-[node name="HUD" type="CanvasLayer" parent="."]
-
-[node name="Panel" type="PanelContainer" parent="HUD"]
+[node name="Panel" type="PanelContainer" parent="HUD" unique_id=1161348868]
 offset_left = 16.0
 offset_top = 16.0
 offset_right = 576.0
 offset_bottom = 178.0
 
-[node name="Margin" type="MarginContainer" parent="HUD/Panel"]
+[node name="Margin" type="MarginContainer" parent="HUD/Panel" unique_id=1445427452]
 layout_mode = 2
 theme_override_constants/margin_left = 14
 theme_override_constants/margin_top = 10
 theme_override_constants/margin_right = 14
 theme_override_constants/margin_bottom = 10
 
-[node name="Content" type="VBoxContainer" parent="HUD/Panel/Margin"]
+[node name="Content" type="VBoxContainer" parent="HUD/Panel/Margin" unique_id=1098885755]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="Title" type="Label" parent="HUD/Panel/Margin/Content"]
+[node name="Title" type="Label" parent="HUD/Panel/Margin/Content" unique_id=1073303]
 layout_mode = 2
 theme_override_font_sizes/font_size = 22
 text = "Slug multiplayer"
 
-[node name="Connection" type="HBoxContainer" parent="HUD/Panel/Margin/Content"]
+[node name="Connection" type="HBoxContainer" parent="HUD/Panel/Margin/Content" unique_id=1388281402]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="Address" type="LineEdit" parent="HUD/Panel/Margin/Content/Connection"]
+[node name="Address" type="LineEdit" parent="HUD/Panel/Margin/Content/Connection" unique_id=341889323]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(190, 0)
 layout_mode = 2
 size_flags_horizontal = 3
+tooltip_text = "Use 127.0.0.1 for two instances on this computer, or the host's LAN IP."
 text = "127.0.0.1"
 placeholder_text = "Host IP address"
-tooltip_text = "Use 127.0.0.1 for two instances on this computer, or the host's LAN IP."
 
-[node name="HostButton" type="Button" parent="HUD/Panel/Margin/Content/Connection"]
+[node name="HostButton" type="Button" parent="HUD/Panel/Margin/Content/Connection" unique_id=1507815230]
 unique_name_in_owner = true
 layout_mode = 2
 focus_mode = 0
 text = "Host"
 
-[node name="JoinButton" type="Button" parent="HUD/Panel/Margin/Content/Connection"]
+[node name="JoinButton" type="Button" parent="HUD/Panel/Margin/Content/Connection" unique_id=683464589]
 unique_name_in_owner = true
 layout_mode = 2
 focus_mode = 0
 text = "Join"
 
-[node name="LeaveButton" type="Button" parent="HUD/Panel/Margin/Content/Connection"]
+[node name="LeaveButton" type="Button" parent="HUD/Panel/Margin/Content/Connection" unique_id=991382849]
 unique_name_in_owner = true
 layout_mode = 2
 focus_mode = 0
 text = "Disconnect"
 
-[node name="Status" type="Label" parent="HUD/Panel/Margin/Content"]
+[node name="Status" type="Label" parent="HUD/Panel/Margin/Content" unique_id=703465832]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Host a game, or enter an IP and join."
 autowrap_mode = 2
 
-[node name="Controls" type="Label" parent="HUD/Panel/Margin/Content"]
+[node name="Controls" type="Label" parent="HUD/Panel/Margin/Content" unique_id=1455019548]
 layout_mode = 2
 text = "Left / Right: move    Up: jump    Walk over a gun    Space: shoot"
