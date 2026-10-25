@@ -54,6 +54,9 @@ func _test_host() -> void:
 	if not await _wait_until(func(): return arena.players.get_child_count() == 2):
 		_check(false, "Client did not join the host")
 		return
+	for player in arena.players.get_children():
+		if player.weapon_type.is_empty():
+			player.equip_weapon("gun")
 	if not await _wait_until(func(): return saw_client_move and saw_client_jump and saw_client_shot):
 		_check(false, "Host did not simulate the client's movement, jump, and shooting")
 		return
@@ -114,6 +117,7 @@ func _test_client() -> void:
 	var slug: Node2D = load("res://Game/Slug/slug.tscn").instantiate()
 	root.add_child(slug)
 	var child_count := root.get_child_count()
+	slug.equip_weapon("gun")
 	slug.shoot()
 	_check(root.get_child_count() == child_count + 1, "Standalone slug could not shoot")
 	for node in root.get_children():

@@ -12,12 +12,27 @@ A Godot 4.6 2D platformer with ENet multiplayer, supporting three players by def
    **Room full** until someone leaves.
 
 Each instance controls its own slug with **Left/Right** to move, **Up** to jump,
-and **Space** to shoot. These use the existing `p1 left`, `p1 right`, `p1 jump`,
+and **Space** to fire a held gun. Walk over a weapon on the arena to pick it up.
+These use the existing `p1 left`, `p1 right`, `p1 jump`,
 and `p1 act` Input Map actions. Each player has a distinct tint and number, and
 your slug is labeled `(you)`.
-The first projectile hit shoots the shell off as a spinning, bouncing piece.
-The slug then uses its naked animations. A second hit kills it, plays
+Guns show their remaining ammo above the slug. When the magazine is empty, the
+gun is thrown aside and cannot be picked up again. The three `WeaponSpawnPoints`
+markers in the Arena set where pickups appear. A new random gun appears at the
+same marker seven seconds after one is claimed; **Weapon Respawn Delay** is
+editable in the Arena inspector. Death also drops the held gun.
+
+Pistol, revolver, paperweight, shotgun, sniper, minigun, and RPG use the images
+in `Game/Weapons`. Shotgun shells scatter five pellets, the minigun fires quickly,
+sniper rounds hit harder, and RPG shots explode with splash damage. The numbered
+minigun and shotgun sprites animate while firing or reloading.
+Their ammo, rate of fire, and projectile settings are in
+`Game/Weapons/weapon_catalog.gd`.
+
+The first ordinary projectile hit shoots the shell off as a spinning, bouncing piece.
+The slug then uses its naked animations. Another hit kills it, plays
 the death animation for the shot's direction, and throws its severed head.
+Heavy shots or several shotgun pellets can cause both hits at once.
 Each hit produces a short red blood burst; the lethal hit makes a larger burst.
 Dead slugs cannot be controlled or shoot and respawn with their shell after three seconds.
 Slugs also respawn if they fall out of the arena.
@@ -43,10 +58,11 @@ for a replacement player. If the host leaves, clients can host or join a new gam
 
 The host simulates all slugs and projectile collisions. Clients send control
 changes to the host, which checks the sending peer against the slug's assigned
-player. `MultiplayerSpawner` replicates players, projectiles, severed heads,
-shot-off shells, and blood bursts,
+player. `MultiplayerSpawner` replicates players, weapon pickups, dropped guns,
+projectiles, explosions, severed heads, shot-off shells, and blood bursts,
 including late joins and removals. `MultiplayerSynchronizer` replicates position,
-velocity, facing, and hit state. The host decides hits and respawns. Projectiles
+velocity, facing, held weapon, ammo, and hit state. The host decides pickups,
+shots, hits, and respawns. Projectiles
 disappear on impact or after two seconds; severed heads disappear after four.
 
 Client movement currently waits for the host's response, so this setup is best
@@ -76,5 +92,6 @@ numbers/colors/spawn points, explicit rejection of the fourth player, occupancy
 updates, and successful retry using a vacated slot.
 The final two-instance check covers both directional deaths, blood and head
 replication, shot-off shells, and respawning. Separate local checks cover blood
-bursts and shell flight, animation, and cleanup. Network tests use a free UDP port, so they can run while
+bursts, shell flight, pickup timing, ammo, empty gun discards, firing patterns,
+and RPG splash. Network tests use a free UDP port, so they can run while
 the game is open.

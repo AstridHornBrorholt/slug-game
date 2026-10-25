@@ -29,8 +29,14 @@ var jump_cut_requested: bool = false
 var last_sent_direction: float = 2.0
 var last_sent_jump: bool = false
 var last_sent_shoot: bool = false
+var weapon_type: String = ""
+var ammo: int = 0
+var weapon_animation_time: float = 0.0
+var last_visible_weapon: String = ""
+var last_visible_ammo: int = 0
 
 @onready var sprite: AnimatedSprite2D = $SpriteSheet
+@onready var weapon_sprite: Sprite2D = $WeaponSprite
 
 
 func _ready() -> void:
@@ -84,12 +90,12 @@ func _physics_process(delta: float) -> void:
 		_respawn()
 
 	shoot_cooldown = maxf(shoot_cooldown - delta, 0.0)
-	if shoot_held and shoot_cooldown <= 0.0:
+	if shoot_held and shoot_cooldown <= 0.0 and not weapon_type.is_empty():
 		shoot()
-		shoot_cooldown = shoot_interval
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
+	weapon_animation_time = maxf(weapon_animation_time - delta, 0.0)
 	_update_appearance()
 
 
@@ -107,6 +113,59 @@ func _update_appearance() -> void:
 	$PlayerLabel.visible = life_state != DEAD
 	collision_layer = 0 if life_state == DEAD else 2
 	collision_mask = 1 if life_state == DEAD else 3
+	_update_weapon_visual()
+
+
+func _update_weapon_visual() -> void:
+	var holding := life_state != DEAD and not weapon_type.is_empty()
+	weapon_sprite.visible = holding
+	$WeaponLabel.visible = holding
+	if not holding:
+		last_visible_weapon = weapon_type
+		last_visible_ammo = ammo
+		return
+	if weapon_type == last_visible_weapon and ammo < last_visible_ammo:
+		weapon_animation_time = 0.35 if weapon_type == "shotgun" else 0.17
+	last_visible_weapon = weapon_type
+	last_visible_ammo = ammo
+	var frame := 0
+	if weapon_type == "shotgun" and weapon_animation_time > 0.0:
+		frame = 1 if weapon_animation_time > 0.18 else 2
+	elif weapon_type == "minigun" and weapon_animation_time > 0.0:
+		frame = int(Time.get_ticks_msec() / 55) % 2
+	weapon_sprite.texture = WeaponCatalog.texture(weapon_type, frame)
+	weapon_sprite.position = Vector2(9.0 * facing_direction, -7.0)
+	weapon_sprite.flip_h = facing_direction < 0.0
+	var stats := WeaponCatalog.data(weapon_type)
+	$WeaponLabel.text = "%s  %d" % [stats.name, ammo]
+
+
+func can_pick_up_weapon() -> bool:
+	return multiplayer.is_server() and life_state != DEAD and weapon_type.is_empty()
+
+
+func equip_weapon(kind: String) -> void:
+	if not can_pick_up_weapon():
+		return
+	var stats := WeaponCatalog.data(kind)
+	if stats.is_empty():
+		return
+	weapon_type = kind
+	ammo = int(stats.ammo)
+	shoot_cooldown = 0.0
+	_update_weapon_visual()
+
+
+func _discard_weapon() -> void:
+	if weapon_type.is_empty():
+		return
+	var arena := get_parent().get_parent()
+	if arena != null and arena.has_method("discard_weapon"):
+		arena.discard_weapon(self, weapon_type)
+	weapon_type = ""
+	ammo = 0
+	weapon_animation_time = 0.0
+	_update_weapon_visual()
 
 
 func take_hit(shot_direction: float, shooter_peer_id: int) -> void:
@@ -121,6 +180,7 @@ func take_hit(shot_direction: float, shooter_peer_id: int) -> void:
 			arena.spawn_shot_off_shell(self, shot_direction)
 		life_state = NAKED
 	else:
+		_discard_weapon()
 		life_state = DEAD
 		death_from_front = shot_direction * facing_direction < 0.0
 		respawn_timer = respawn_delay
@@ -134,6 +194,7 @@ func take_hit(shot_direction: float, shooter_peer_id: int) -> void:
 
 
 func _respawn() -> void:
+	_discard_weapon()
 	life_state = SHELL
 	death_from_front = false
 	position = spawn_point
@@ -178,17 +239,30 @@ func _apply_controls(direction: float, jumping: bool, shooting: bool) -> void:
 
 
 func shoot() -> void:
-	if life_state == DEAD:
+	if not multiplayer.is_server() or life_state == DEAD or weapon_type.is_empty() or ammo <= 0:
 		return
+	var stats := WeaponCatalog.data(weapon_type)
 	var arena := get_parent().get_parent()
-	if arena != null and arena.has_method("spawn_projectile"):
-		arena.spawn_projectile(self)
-		return
-	# Keep the prefab usable when running a scene without the multiplayer arena.
-	var projectile = PROJECTILE_SCENE.instantiate()
-	projectile.direction = facing_direction
-	projectile.add_collision_exception_with(self)
-	get_parent().add_child(projectile)
-	projectile.global_position = global_position + Vector2(
-		muzzle_offset.x * facing_direction, muzzle_offset.y
-	)
+	if arena != null and arena.has_method("fire_weapon"):
+		arena.fire_weapon(self, weapon_type)
+	else:
+		# The prefab remains shootable in a scene without the arena.
+		var projectile = PROJECTILE_SCENE.instantiate()
+		projectile.direction = facing_direction
+		projectile.speed = stats.speed
+		projectile.damage = stats.damage
+		projectile.projectile_radius = stats.radius
+		projectile.blast_radius = stats.blast
+		projectile.weapon_type = weapon_type
+		projectile.add_collision_exception_with(self)
+		get_parent().add_child(projectile)
+		projectile.global_position = global_position + Vector2(
+			WeaponCatalog.muzzle_offset(weapon_type).x * facing_direction,
+			WeaponCatalog.muzzle_offset(weapon_type).y
+		)
+	ammo -= 1
+	shoot_cooldown = float(stats.cooldown)
+	if ammo <= 0:
+		_discard_weapon()
+	else:
+		_update_weapon_visual()

@@ -37,6 +37,7 @@ func _test_host() -> void:
 		return
 	var victim: Node = arena.players.get_node("1")
 	var shooter: Node = _other_player()
+	victim.equip_weapon("gun")
 	victim.take_hit(-1.0, 1)
 	_check(victim.life_state == victim.SHELL, "Own shot should not damage its slug")
 	_fire_test_shot(victim, -1.0, shooter.player_peer_id)
@@ -50,6 +51,8 @@ func _test_host() -> void:
 	_fire_test_shot(victim, -1.0, shooter.player_peer_id)
 	_check(await _wait_until(func(): return victim.life_state == victim.DEAD), "Second projectile did not kill the slug")
 	_check(victim.death_from_front and victim.sprite.animation == &"Dead from Front", "Wrong front death animation")
+	_check(victim.weapon_type.is_empty(), "Dead slug kept its gun")
+	_check(arena.get_node("DroppedGuns").get_child_count() >= 1, "Death did not throw the gun")
 	_check(arena.next_shell_id == 1, "Lethal hit launched another shell")
 	_check(arena.get_node("BloodBursts").has_node("Blood_2"), "Death did not produce blood")
 	_check(arena.get_node("BloodBursts/Blood_2").fatal, "Death should use the larger burst")
@@ -99,6 +102,7 @@ func _test_client() -> void:
 		return victim.death_from_front and victim.sprite.animation == &"Dead from Front"
 	), "Client missed front animation")
 	_check(await _wait_until(func(): return arena.get_node("SeveredHeads").has_node("Head_1")), "Client missed first head")
+	_check(await _wait_until(func(): return arena.get_node("DroppedGuns").get_child_count() >= 1), "Client missed dropped gun")
 	_check(await _wait_until(func(): return arena.get_node("BloodBursts").has_node("Blood_2")), "Client missed death blood burst")
 	_mark("front")
 	_check(await _wait_until(func(): return victim.life_state == victim.SHELL), "Client missed respawn")

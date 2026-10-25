@@ -5,14 +5,22 @@ const PROJECTILE_SCENE: PackedScene = preload("res://Game/Projectile/projectile.
 const HEAD_SCENE: PackedScene = preload("res://Game/SeveredHead/severed_head.tscn")
 const BLOOD_SCENE: PackedScene = preload("res://Game/BloodParticles/blood_burst.tscn")
 const SHOT_OFF_SHELL_SCENE: PackedScene = preload("res://Game/ShotOffShell/shot_off_shell.tscn")
+const WEAPON_PICKUP_SCENE: PackedScene = preload("res://Game/Weapons/weapon_pickup.tscn")
+const DROPPED_GUN_SCENE: PackedScene = preload("res://Game/Weapons/dropped_gun.tscn")
+const EXPLOSION_SCENE: PackedScene = preload("res://Game/Weapons/explosion_burst.tscn")
 
 @export_range(1, 4095) var max_players: int = 3
 @export_range(1024, 65535) var port: int = 7000
+@export_range(0.5, 60.0) var weapon_respawn_delay: float = 7.0
 
 var next_projectile_id: int = 0
 var next_head_id: int = 0
 var next_blood_id: int = 0
 var next_shell_id: int = 0
+var next_pickup_id: int = 0
+var next_drop_id: int = 0
+var next_explosion_id: int = 0
+var active_pickups: Dictionary = {}
 var peer_slots: Dictionary = {}
 var room_capacity: int = 3
 var local_player_number: int = 1
@@ -26,6 +34,9 @@ var rejection_message: String = ""
 @onready var head_spawner: MultiplayerSpawner = $HeadSpawner
 @onready var blood_spawner: MultiplayerSpawner = $BloodSpawner
 @onready var shell_spawner: MultiplayerSpawner = $ShellSpawner
+@onready var pickup_spawner: MultiplayerSpawner = $WeaponSpawner
+@onready var drop_spawner: MultiplayerSpawner = $DropSpawner
+@onready var explosion_spawner: MultiplayerSpawner = $ExplosionSpawner
 @onready var status: Label = %Status
 
 
@@ -35,6 +46,9 @@ func _ready() -> void:
 	head_spawner.spawn_function = _create_head
 	blood_spawner.spawn_function = _create_blood
 	shell_spawner.spawn_function = _create_shell
+	pickup_spawner.spawn_function = _create_weapon_pickup
+	drop_spawner.spawn_function = _create_dropped_gun
+	explosion_spawner.spawn_function = _create_explosion
 	# Admission happens before replication, so rejected peers never enter the game.
 	multiplayer.auth_callback = _on_auth_data
 	multiplayer.peer_authenticating.connect(_on_peer_authenticating)
@@ -67,6 +81,8 @@ func host_game() -> void:
 	rejection_message = ""
 	_set_session_active(true)
 	player_spawner.spawn({"peer_id": 1, "slot": 0, "capacity": room_capacity})
+	for slot in range($WeaponSpawnPoints.get_child_count()):
+		_spawn_weapon_pickup(slot)
 	_update_status()
 
 
@@ -91,6 +107,9 @@ func leave_game(message: String = "Disconnected. Host or join another game.") ->
 	multiplayer.multiplayer_peer.close()
 	multiplayer.multiplayer_peer = OfflineMultiplayerPeer.new()
 	peer_slots.clear()
+	active_pickups.clear()
+	for timer in $WeaponRespawnTimers.get_children():
+		timer.free()
 	for player in players.get_children():
 		player.free()
 	for projectile in projectiles.get_children():
@@ -101,6 +120,12 @@ func leave_game(message: String = "Disconnected. Host or join another game.") ->
 		blood.free()
 	for shell in $ShotOffShells.get_children():
 		shell.free()
+	for pickup in $WeaponPickups.get_children():
+		pickup.free()
+	for gun in $DroppedGuns.get_children():
+		gun.free()
+	for explosion in $Explosions.get_children():
+		explosion.free()
 	_set_session_active(false)
 	status.text = message
 
@@ -162,7 +187,7 @@ func _on_authentication_failed(peer_id: int) -> void:
 
 
 func _update_status() -> void:
-	if session_joined:
+	if session_joined and is_inside_tree() and multiplayer != null:
 		status.text = "%s | %d/%d players | You are P%d" % [
 			"Hosting on port %d" % port if multiplayer.is_server() else "Connected",
 			players.get_child_count(), room_capacity, local_player_number,
@@ -212,17 +237,30 @@ func _create_player(data: Dictionary) -> Node:
 	return player
 
 
-func spawn_projectile(player: CharacterBody2D) -> void:
+func fire_weapon(player: CharacterBody2D, weapon_type: String) -> void:
 	if not multiplayer.is_server():
 		return
-	next_projectile_id += 1
-	projectile_spawner.spawn({
-		"id": next_projectile_id,
-		"position": player.global_position,
-		"direction": player.facing_direction,
-		"shooter_peer_id": player.player_peer_id,
-		"muzzle_offset": player.muzzle_offset,
-	})
+	var stats := WeaponCatalog.data(weapon_type)
+	if stats.is_empty():
+		return
+	for pellet in range(int(stats.pellets)):
+		var spread := 0.0
+		if int(stats.pellets) > 1:
+			spread = (2.0 * float(pellet) / float(int(stats.pellets) - 1) - 1.0) * float(stats.spread)
+		next_projectile_id += 1
+		projectile_spawner.spawn({
+			"id": next_projectile_id,
+			"position": player.global_position,
+			"direction": player.facing_direction,
+			"shooter_peer_id": player.player_peer_id,
+			"muzzle_offset": WeaponCatalog.muzzle_offset(weapon_type),
+			"vertical_speed": spread,
+			"speed": stats.speed,
+			"damage": stats.damage,
+			"radius": stats.radius,
+			"blast_radius": stats.blast,
+			"weapon_type": weapon_type,
+		})
 
 
 func _create_projectile(data: Dictionary) -> Node:
@@ -234,6 +272,12 @@ func _create_projectile(data: Dictionary) -> Node:
 	projectile.launch_offset = Vector2(
 		data.muzzle_offset.x * data.direction, data.muzzle_offset.y
 	)
+	projectile.vertical_speed = data.get("vertical_speed", 0.0)
+	projectile.speed = data.get("speed", 600.0)
+	projectile.damage = data.get("damage", 1)
+	projectile.projectile_radius = data.get("radius", 4.0)
+	projectile.blast_radius = data.get("blast_radius", 0.0)
+	projectile.weapon_type = data.get("weapon_type", "gun")
 	return projectile
 
 
@@ -302,3 +346,91 @@ func _create_shell(data: Dictionary) -> Node:
 	shell.spin_speed = data.spin_speed
 	shell.get_node("Sprite2D").modulate = data.color
 	return shell
+
+
+func _spawn_weapon_pickup(slot: int) -> void:
+	if not multiplayer.is_server() or active_pickups.has(slot):
+		return
+	var choices := WeaponCatalog.ids()
+	var kind: String = choices[randi_range(0, choices.size() - 1)]
+	next_pickup_id += 1
+	active_pickups[slot] = pickup_spawner.spawn({
+		"id": next_pickup_id,
+		"slot": slot,
+		"position": $WeaponSpawnPoints.get_child(slot).position,
+		"weapon_type": kind,
+	})
+
+
+func _create_weapon_pickup(data: Dictionary) -> Node:
+	var pickup = WEAPON_PICKUP_SCENE.instantiate()
+	pickup.name = "Weapon_%d" % int(data.id)
+	pickup.spawn_slot = data.slot
+	pickup.position = data.position
+	pickup.weapon_type = data.weapon_type
+	return pickup
+
+
+func claim_weapon(pickup: Area2D, player: Node2D) -> void:
+	if not multiplayer.is_server() or not player.has_method("can_pick_up_weapon"):
+		return
+	if not player.can_pick_up_weapon():
+		return
+	var slot: int = pickup.spawn_slot
+	if not active_pickups.has(slot) or active_pickups[slot] != pickup:
+		return
+	player.equip_weapon(pickup.weapon_type)
+	active_pickups.erase(slot)
+	pickup.queue_free()
+	_respawn_weapon_after_delay(slot)
+
+
+func _respawn_weapon_after_delay(slot: int) -> void:
+	var timer := Timer.new()
+	timer.name = "Respawn_%d" % slot
+	timer.one_shot = true
+	timer.wait_time = weapon_respawn_delay
+	$WeaponRespawnTimers.add_child(timer)
+	timer.timeout.connect(func():
+		timer.queue_free()
+		if session_joined and multiplayer.is_server() and not active_pickups.has(slot):
+			_spawn_weapon_pickup(slot)
+	)
+	timer.start()
+
+
+func discard_weapon(player: CharacterBody2D, weapon_type: String) -> void:
+	if not multiplayer.is_server() or weapon_type.is_empty():
+		return
+	next_drop_id += 1
+	drop_spawner.spawn({
+		"id": next_drop_id,
+		"position": player.global_position + Vector2(player.facing_direction * 8.0, -8.0),
+		"velocity": Vector2(player.facing_direction * 125.0, -165.0),
+		"spin_speed": player.facing_direction * 8.0,
+		"weapon_type": weapon_type,
+	})
+
+
+func _create_dropped_gun(data: Dictionary) -> Node:
+	var gun = DROPPED_GUN_SCENE.instantiate()
+	gun.name = "Dropped_%d" % int(data.id)
+	gun.position = data.position
+	gun.launch_velocity = data.velocity
+	gun.spin_speed = data.spin_speed
+	gun.weapon_type = data.weapon_type
+	return gun
+
+
+func spawn_explosion(impact_position: Vector2) -> void:
+	if not multiplayer.is_server():
+		return
+	next_explosion_id += 1
+	explosion_spawner.spawn({"id": next_explosion_id, "position": impact_position})
+
+
+func _create_explosion(data: Dictionary) -> Node:
+	var explosion = EXPLOSION_SCENE.instantiate()
+	explosion.name = "Explosion_%d" % int(data.id)
+	explosion.position = data.position
+	return explosion

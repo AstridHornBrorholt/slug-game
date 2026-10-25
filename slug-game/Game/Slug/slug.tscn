@@ -28,6 +28,12 @@ properties/4/replication_mode = 2
 properties/5/path = NodePath(".:move_input")
 properties/5/spawn = true
 properties/5/replication_mode = 2
+properties/6/path = NodePath(".:weapon_type")
+properties/6/spawn = true
+properties/6/replication_mode = 2
+properties/7/path = NodePath(".:ammo")
+properties/7/spawn = true
+properties/7/replication_mode = 2
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_txaus"]
 atlas = ExtResource("2_txlkp")
@@ -133,3 +139,18 @@ replication_config = SubResource("SceneReplicationConfig_player")
 position = Vector2(-3, -6)
 sprite_frames = SubResource("SpriteFrames_txaus")
 animation = &"Shell Stop"
+
+[node name="WeaponSprite" type="Sprite2D" parent="."]
+position = Vector2(9, -7)
+texture_filter = 1
+visible = false
+
+[node name="WeaponLabel" type="Label" parent="."]
+visible = false
+offset_left = -65.0
+offset_top = -66.0
+offset_right = 65.0
+offset_bottom = -47.0
+theme_override_font_sizes/font_size = 10
+text = "Gun 0"
+horizontal_alignment = 1

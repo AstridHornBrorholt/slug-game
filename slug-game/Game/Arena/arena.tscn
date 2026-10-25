@@ -23,12 +23,30 @@ script = ExtResource("2_camera")
 
 [node name="ShotOffShells" type="Node2D" parent="."]
 
+[node name="WeaponPickups" type="Node2D" parent="."]
+
+[node name="DroppedGuns" type="Node2D" parent="."]
+
+[node name="Explosions" type="Node2D" parent="."]
+
+[node name="WeaponSpawnPoints" type="Node2D" parent="."]
+
+[node name="WeaponRespawnTimers" type="Node" parent="."]
+
+[node name="Left" type="Marker2D" parent="WeaponSpawnPoints"]
+position = Vector2(430, 396)
+
+[node name="Center" type="Marker2D" parent="WeaponSpawnPoints"]
+position = Vector2(585, 396)
+
+[node name="Right" type="Marker2D" parent="WeaponSpawnPoints"]
+position = Vector2(740, 396)
+
 [node name="PlayerSpawner" type="MultiplayerSpawner" parent="."]
 spawn_path = NodePath("../Players")
 
 [node name="ProjectileSpawner" type="MultiplayerSpawner" parent="."]
 spawn_path = NodePath("../Projectiles")
-spawn_limit = 64
 
 [node name="HeadSpawner" type="MultiplayerSpawner" parent="."]
 spawn_path = NodePath("../SeveredHeads")
@@ -40,6 +58,17 @@ spawn_limit = 64
 
 [node name="ShellSpawner" type="MultiplayerSpawner" parent="."]
 spawn_path = NodePath("../ShotOffShells")
+spawn_limit = 64
+
+[node name="WeaponSpawner" type="MultiplayerSpawner" parent="."]
+spawn_path = NodePath("../WeaponPickups")
+
+[node name="DropSpawner" type="MultiplayerSpawner" parent="."]
+spawn_path = NodePath("../DroppedGuns")
+spawn_limit = 64
+
+[node name="ExplosionSpawner" type="MultiplayerSpawner" parent="."]
+spawn_path = NodePath("../Explosions")
 spawn_limit = 64
 
 [node name="Ground" type="StaticBody2D" parent="." unique_id=1573646087]
@@ -117,4 +146,4 @@ autowrap_mode = 2
 
 [node name="Controls" type="Label" parent="HUD/Panel/Margin/Content"]
 layout_mode = 2
-text = "Left / Right: move    Up: jump    Space: shoot"
+text = "Left / Right: move    Up: jump    Walk over a gun    Space: shoot"
