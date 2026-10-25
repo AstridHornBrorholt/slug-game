@@ -1,17 +1,106 @@
 [gd_scene format=3 uid="uid://cexmpscvgw5er"]
 
-[ext_resource type="Texture2D" uid="uid://cpb182giaxltj" path="res://Game/Slug/Pasted image.png" id="1_eo5lo"]
+[ext_resource type="Texture2D" uid="uid://duj1bgke2hn7y" path="res://Game/Slug/Sprite-Sheet.png" id="2_m7p01"]
 [ext_resource type="Script" uid="uid://koeufjjvvqyr" path="res://Game/Slug/slug.gd" id="2_player"]
+[ext_resource type="Texture2D" uid="uid://b41oq7ai8dkq6" path="res://Game/Slug/Sprite-Sheet-Naked.png" id="2_txlkp"]
 
-[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_deoc1"]
+[sub_resource type="CircleShape2D" id="CircleShape2D_txlkp"]
+radius = 7.0
+
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_player"]
+properties/0/path = NodePath(".:position")
+properties/0/spawn = true
+properties/0/replication_mode = 1
+properties/1/path = NodePath(".:velocity")
+properties/1/spawn = true
+properties/1/replication_mode = 1
+properties/2/path = NodePath(".:facing_direction")
+properties/2/spawn = true
+properties/2/replication_mode = 1
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_txaus"]
+atlas = ExtResource("2_txlkp")
+region = Rect2(0, 0, 24, 24)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_g7y34"]
+atlas = ExtResource("2_txlkp")
+region = Rect2(24, 0, 24, 24)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_uhdfb"]
+atlas = ExtResource("2_m7p01")
+region = Rect2(0, 0, 24, 24)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_dheme"]
+atlas = ExtResource("2_m7p01")
+region = Rect2(24, 0, 24, 24)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_hncut"]
+atlas = ExtResource("2_m7p01")
+region = Rect2(0, 0, 24, 24)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_txaus"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_txaus")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_g7y34")
+}],
+"loop": true,
+"name": &"Naked Move",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_txaus")
+}],
+"loop": true,
+"name": &"Naked Stop",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_uhdfb")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_dheme")
+}],
+"loop": true,
+"name": &"Shell Move",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_hncut")
+}],
+"loop": true,
+"name": &"Shell Stop",
+"speed": 5.0
+}]
 
 [node name="Player" type="CharacterBody2D" unique_id=505334421]
 script = ExtResource("2_player")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=497177919]
-shape = SubResource("CapsuleShape2D_deoc1")
+position = Vector2(2, -1)
+shape = SubResource("CircleShape2D_txlkp")
 
-[node name="PastedImage" type="Sprite2D" parent="." unique_id=340646898]
-position = Vector2(-1, -1)
-scale = Vector2(0.104712, 0.10471205)
-texture = ExtResource("1_eo5lo")
+[node name="PlayerLabel" type="Label" parent="." unique_id=797221885]
+offset_left = -45.0
+offset_top = -48.0
+offset_right = 45.0
+offset_bottom = -25.0
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+text = "P1"
+horizontal_alignment = 1
+
+[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="." unique_id=769743651]
+replication_config = SubResource("SceneReplicationConfig_player")
+
+[node name="SpriteSheet" type="AnimatedSprite2D" parent="." unique_id=646836810]
+position = Vector2(-3, -6)
+sprite_frames = SubResource("SpriteFrames_txaus")
+animation = &"Shell Move"

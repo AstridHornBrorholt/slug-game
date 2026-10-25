@@ -1,9 +1,14 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://Game/Projectile/projectile.gd" id="1_projectile"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_projectile"]
 radius = 4.0
+
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_projectile"]
+properties/0/path = NodePath(".:position")
+properties/0/spawn = true
+properties/0/replication_mode = 1
 
 [node name="Projectile" type="CharacterBody2D"]
 collision_layer = 0
@@ -12,3 +17,6 @@ script = ExtResource("1_projectile")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("CircleShape2D_projectile")
+
+[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="."]
+replication_config = SubResource("SceneReplicationConfig_projectile")
