@@ -1,0 +1,17 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://Game/BloodParticles/blood_burst.gd" id="1_blood"]
+[ext_resource type="Texture2D" path="res://Game/BloodParticles/blood_drop.svg" id="2_drop"]
+
+[sub_resource type="Gradient" id="Gradient_blood"]
+offsets = PackedFloat32Array(0, 1)
+colors = PackedColorArray(0.92, 0.08, 0.12, 1, 0.35, 0.01, 0.04, 0)
+
+[node name="BloodBurst" type="CPUParticles2D"]
+emitting = false
+amount = 8
+one_shot = true
+explosiveness = 1.0
+texture = ExtResource("2_drop")
+color_ramp = SubResource("Gradient_blood")
+script = ExtResource("1_blood")

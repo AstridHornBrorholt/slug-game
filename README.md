@@ -15,8 +15,10 @@ Each instance controls its own slug with **Left/Right** to move, **Up** to jump,
 and **Space** to shoot. These use the existing `p1 left`, `p1 right`, `p1 jump`,
 and `p1 act` Input Map actions. Each player has a distinct tint and number, and
 your slug is labeled `(you)`.
-The first projectile hit removes a slug's shell. A second hit kills it, plays
+The first projectile hit shoots the shell off as a spinning, bouncing piece.
+The slug then uses its naked animations. A second hit kills it, plays
 the death animation for the shot's direction, and throws its severed head.
+Each hit produces a short red blood burst; the lethal hit makes a larger burst.
 Dead slugs cannot be controlled or shoot and respawn with their shell after three seconds.
 Slugs also respawn if they fall out of the arena.
 
@@ -41,7 +43,8 @@ for a replacement player. If the host leaves, clients can host or join a new gam
 
 The host simulates all slugs and projectile collisions. Clients send control
 changes to the host, which checks the sending peer against the slug's assigned
-player. `MultiplayerSpawner` replicates players, projectiles, and severed heads,
+player. `MultiplayerSpawner` replicates players, projectiles, severed heads,
+shot-off shells, and blood bursts,
 including late joins and removals. `MultiplayerSynchronizer` replicates position,
 velocity, facing, and hit state. The host decides hits and respawns. Projectiles
 disappear on impact or after two seconds; severed heads disappear after four.
@@ -71,5 +74,7 @@ host loss, switching from client to host, and standalone prefab shooting.
 It then launches four instances to check a three-player room, distinct player
 numbers/colors/spawn points, explicit rejection of the fourth player, occupancy
 updates, and successful retry using a vacated slot.
-The final two-instance check covers both directional deaths, head replication,
-and respawning. Tests use a free UDP port, so they can run while the game is open.
+The final two-instance check covers both directional deaths, blood and head
+replication, shot-off shells, and respawning. Separate local checks cover blood
+bursts and shell flight, animation, and cleanup. Network tests use a free UDP port, so they can run while
+the game is open.

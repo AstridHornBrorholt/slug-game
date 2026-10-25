@@ -14,11 +14,27 @@ def main():
     parser.add_argument("--godot", default="godot", help="Godot 4 executable")
     args = parser.parse_args()
     project = Path(__file__).resolve().parents[1]
-    success = run_case(args.godot, project, "multiplayer_smoke.gd", ("host", "client"))
+    success = run_local_case(args.godot, project, "blood_smoke.gd", "BLOOD_SMOKE_PASS")
+    success = run_local_case(args.godot, project, "shell_smoke.gd", "SHELL_SMOKE_PASS") and success
+    success = run_case(args.godot, project, "multiplayer_smoke.gd", ("host", "client")) and success
     success = run_case(args.godot, project, "capacity_smoke.gd",
                        ("host", "first", "second", "overflow")) and success
     success = run_case(args.godot, project, "combat_smoke.gd", ("host", "client")) and success
     return 0 if success else 1
+
+
+def run_local_case(godot, project, script, success_marker):
+    result = subprocess.run(
+        [godot, "--headless", "--path", str(project),
+         "--script", f"res://tests/{script}"],
+        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, timeout=15,
+    )
+    passed = result.returncode == 0 and success_marker in result.stdout
+    passed = passed and "ERROR:" not in result.stdout and "WARNING:" not in result.stdout
+    print(f"{script}: {'PASS' if passed else 'FAIL'}")
+    if not passed:
+        print(result.stdout[-14000:])
+    return passed
 
 
 def run_case(godot, project, script, roles):

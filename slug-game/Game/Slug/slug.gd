@@ -100,7 +100,8 @@ func _update_appearance() -> void:
 		animation = &"Dead from Front" if death_from_front else &"Dead from Behind"
 	else:
 		var state := "Naked" if life_state == NAKED else "Shell"
-		animation = StringName("%s %s" % [state, "Move" if absf(velocity.x) > 5.0 else "Stop"])
+		var direction := Input.get_axis("p1 left", "p1 right") if player_peer_id == multiplayer.get_unique_id() else move_input
+		animation = StringName("%s %s" % [state, "Move" if direction != 0.0 else "Stop"])
 	if sprite.animation != animation or not sprite.is_playing():
 		sprite.play(animation)
 	$PlayerLabel.visible = life_state != DEAD
@@ -111,7 +112,13 @@ func _update_appearance() -> void:
 func take_hit(shot_direction: float, shooter_peer_id: int) -> void:
 	if not multiplayer.is_server() or life_state == DEAD or shooter_peer_id == player_peer_id:
 		return
+	var fatal := life_state == NAKED
+	var arena := get_parent().get_parent()
+	if arena != null and arena.has_method("spawn_blood"):
+		arena.spawn_blood(self, shot_direction, fatal)
 	if life_state == SHELL:
+		if arena != null and arena.has_method("spawn_shot_off_shell"):
+			arena.spawn_shot_off_shell(self, shot_direction)
 		life_state = NAKED
 	else:
 		life_state = DEAD
@@ -121,7 +128,6 @@ func take_hit(shot_direction: float, shooter_peer_id: int) -> void:
 		shoot_held = false
 		jump_requested = false
 		jump_cut_requested = false
-		var arena := get_parent().get_parent()
 		if arena != null and arena.has_method("spawn_severed_head"):
 			arena.spawn_severed_head(self, shot_direction)
 	_update_appearance()
