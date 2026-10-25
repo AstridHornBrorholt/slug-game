@@ -47,6 +47,7 @@ func _run() -> void:
 
 
 func _test_host() -> void:
+	arena.max_players = 2
 	arena.host_game()
 	_check(arena.players.get_child_count() == 1, "Host should spawn P1 immediately")
 	if not await _wait_until(func(): return arena.players.get_child_count() == 2):

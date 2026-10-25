@@ -15,7 +15,6 @@ script = ExtResource("1_arena")
 
 [node name="PlayerSpawner" type="MultiplayerSpawner" parent="."]
 spawn_path = NodePath("../Players")
-spawn_limit = 2
 
 [node name="ProjectileSpawner" type="MultiplayerSpawner" parent="."]
 spawn_path = NodePath("../Projectiles")
@@ -55,7 +54,7 @@ theme_override_constants/separation = 8
 [node name="Title" type="Label" parent="HUD/Panel/Margin/Content"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 22
-text = "Two slugs"
+text = "Slug multiplayer"
 
 [node name="Connection" type="HBoxContainer" parent="HUD/Panel/Margin/Content"]
 layout_mode = 2
@@ -91,7 +90,7 @@ text = "Disconnect"
 [node name="Status" type="Label" parent="HUD/Panel/Margin/Content"]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Host a game, or enter an IP and join. Two players maximum."
+text = "Host a game, or enter an IP and join."
 autowrap_mode = 2
 
 [node name="Controls" type="Label" parent="HUD/Panel/Margin/Content"]

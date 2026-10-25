@@ -27,7 +27,9 @@ var last_sent_shoot: bool = false
 
 
 func _ready() -> void:
-	sprite.modulate = Color.WHITE if player_number == 1 else Color("97d9ff")
+	sprite.modulate = Color.WHITE if player_number == 1 else Color.from_hsv(
+		fposmod(0.55 + (player_number - 2) * 0.618034, 1.0), 0.4, 1.0
+	)
 	$PlayerLabel.text = "P%d%s" % [
 		player_number, " (you)" if player_peer_id == multiplayer.get_unique_id() else ""
 	]

@@ -1,4 +1,4 @@
-"""Launch two headless Godot instances and check the actual ENet session."""
+"""Check gameplay, capacity, and full-room rejection using real ENet peers."""
 
 import argparse
 import os
@@ -13,14 +13,22 @@ def main():
     parser.add_argument("--godot", default="godot", help="Godot 4 executable")
     args = parser.parse_args()
     project = Path(__file__).resolve().parents[1]
-    command = [args.godot, "--headless", "--path", str(project),
-               "--script", "res://tests/multiplayer_smoke.gd"]
+    success = run_case(args.godot, project, "multiplayer_smoke.gd", ("host", "client"))
+    success = run_case(args.godot, project, "capacity_smoke.gd",
+                       ("host", "first", "second", "overflow")) and success
+    return 0 if success else 1
+
+
+def run_case(godot, project, script, roles):
+    command = [godot, "--headless", "--path", str(project),
+               "--script", f"res://tests/{script}"]
     with tempfile.TemporaryDirectory(prefix="slug-multiplayer-") as temporary:
-        environment = dict(os.environ, XDG_DATA_HOME=temporary, XDG_CONFIG_HOME=temporary)
+        environment = dict(os.environ, XDG_DATA_HOME=temporary, XDG_CONFIG_HOME=temporary,
+                           SLUG_TEST_SYNC_DIR=temporary)
         processes = []
         logs = []
         try:
-            for role in ("host", "client"):
+            for role in roles:
                 path = Path(temporary) / f"{role}.txt"
                 log = path.open("w")
                 logs.append((role, path, log))
@@ -42,16 +50,16 @@ def main():
                     process.wait(timeout=5)
             for _, _, log in logs:
                 log.close()
-            success = len(processes) == 2
+            success = len(processes) == len(roles)
             for (role, path, _), process in zip(logs, processes):
                 output = path.read_text()
                 passed = process.returncode == 0 and "MULTIPLAYER_SMOKE_PASS" in output
                 passed = passed and "ERROR:" not in output and "WARNING:" not in output
-                print(f"{role}: {'PASS' if passed else 'FAIL'}")
+                print(f"{script} {role}: {'PASS' if passed else 'FAIL'}")
                 if not passed:
                     print(output[-14000:])
                 success = success and passed
-        return 0 if success else 1
+        return success
 
 
 if __name__ == "__main__":
