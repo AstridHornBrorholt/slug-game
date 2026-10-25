@@ -3,6 +3,7 @@
 import argparse
 import os
 from pathlib import Path
+import socket
 import subprocess
 import tempfile
 import time
@@ -16,6 +17,7 @@ def main():
     success = run_case(args.godot, project, "multiplayer_smoke.gd", ("host", "client"))
     success = run_case(args.godot, project, "capacity_smoke.gd",
                        ("host", "first", "second", "overflow")) and success
+    success = run_case(args.godot, project, "combat_smoke.gd", ("host", "client")) and success
     return 0 if success else 1
 
 
@@ -23,8 +25,11 @@ def run_case(godot, project, script, roles):
     command = [godot, "--headless", "--path", str(project),
                "--script", f"res://tests/{script}"]
     with tempfile.TemporaryDirectory(prefix="slug-multiplayer-") as temporary:
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as available_port:
+            available_port.bind(("127.0.0.1", 0))
+            test_port = available_port.getsockname()[1]
         environment = dict(os.environ, XDG_DATA_HOME=temporary, XDG_CONFIG_HOME=temporary,
-                           SLUG_TEST_SYNC_DIR=temporary)
+                           SLUG_TEST_SYNC_DIR=temporary, SLUG_TEST_PORT=str(test_port))
         processes = []
         logs = []
         try:

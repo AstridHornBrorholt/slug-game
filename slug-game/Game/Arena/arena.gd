@@ -1,12 +1,14 @@
 extends Node2D
 
-const PORT: int = 7000
 const SLUG_SCENE: PackedScene = preload("res://Game/Slug/slug.tscn")
 const PROJECTILE_SCENE: PackedScene = preload("res://Game/Projectile/projectile.tscn")
+const HEAD_SCENE: PackedScene = preload("res://Game/SeveredHead/severed_head.tscn")
 
 @export_range(1, 4095) var max_players: int = 3
+@export_range(1024, 65535) var port: int = 7000
 
 var next_projectile_id: int = 0
+var next_head_id: int = 0
 var peer_slots: Dictionary = {}
 var room_capacity: int = 3
 var local_player_number: int = 1
@@ -17,12 +19,14 @@ var rejection_message: String = ""
 @onready var projectiles: Node2D = $Projectiles
 @onready var player_spawner: MultiplayerSpawner = $PlayerSpawner
 @onready var projectile_spawner: MultiplayerSpawner = $ProjectileSpawner
+@onready var head_spawner: MultiplayerSpawner = $HeadSpawner
 @onready var status: Label = %Status
 
 
 func _ready() -> void:
 	player_spawner.spawn_function = _create_player
 	projectile_spawner.spawn_function = _create_projectile
+	head_spawner.spawn_function = _create_head
 	# Admission happens before replication, so rejected peers never enter the game.
 	multiplayer.auth_callback = _on_auth_data
 	multiplayer.peer_authenticating.connect(_on_peer_authenticating)
@@ -43,9 +47,9 @@ func _ready() -> void:
 func host_game() -> void:
 	var peer := ENetMultiplayerPeer.new()
 	# Keep transport space available to send a rejection even when the room is full.
-	var error := peer.create_server(PORT, 4095)
+	var error := peer.create_server(port, 4095)
 	if error != OK:
-		status.text = "Could not host on port %d: %s" % [PORT, error_string(error)]
+		status.text = "Could not host on port %d: %s" % [port, error_string(error)]
 		return
 	multiplayer.multiplayer_peer = peer
 	room_capacity = clampi(max_players, 1, 4095)
@@ -64,7 +68,7 @@ func join_game(address: String) -> void:
 		status.text = "Enter the host's IP address first."
 		return
 	var peer := ENetMultiplayerPeer.new()
-	var error := peer.create_client(address, PORT)
+	var error := peer.create_client(address, port)
 	if error != OK:
 		status.text = "Could not join: %s" % error_string(error)
 		return
@@ -83,6 +87,8 @@ func leave_game(message: String = "Disconnected. Host or join another game.") ->
 		player.free()
 	for projectile in projectiles.get_children():
 		projectile.free()
+	for head in $SeveredHeads.get_children():
+		head.free()
 	_set_session_active(false)
 	status.text = message
 
@@ -146,7 +152,7 @@ func _on_authentication_failed(peer_id: int) -> void:
 func _update_status() -> void:
 	if session_joined:
 		status.text = "%s | %d/%d players | You are P%d" % [
-			"Hosting on port %d" % PORT if multiplayer.is_server() else "Connected",
+			"Hosting on port %d" % port if multiplayer.is_server() else "Connected",
 			players.get_child_count(), room_capacity, local_player_number,
 		]
 
@@ -171,7 +177,7 @@ func _on_connected_to_server() -> void:
 
 func _on_connection_failed() -> void:
 	leave_game(rejection_message if not rejection_message.is_empty() else
-		"Connection failed. Check the IP, host, and UDP port %d." % PORT)
+		"Connection failed. Check the IP, host, and UDP port %d." % port)
 
 
 func _on_server_disconnected() -> void:
@@ -217,3 +223,26 @@ func _create_projectile(data: Dictionary) -> Node:
 		data.muzzle_offset.x * data.direction, data.muzzle_offset.y
 	)
 	return projectile
+
+
+func spawn_severed_head(player: CharacterBody2D, shot_direction: float) -> void:
+	if not multiplayer.is_server():
+		return
+	next_head_id += 1
+	head_spawner.spawn({
+		"id": next_head_id,
+		"position": player.global_position + Vector2(7.0 * player.facing_direction, -9.0),
+		"velocity": Vector2(shot_direction * 170.0, -230.0),
+		"spin_speed": shot_direction * 8.0,
+		"color": player.sprite.modulate,
+	})
+
+
+func _create_head(data: Dictionary) -> Node:
+	var head = HEAD_SCENE.instantiate()
+	head.name = "Head_%d" % int(data.id)
+	head.position = data.position
+	head.launch_velocity = data.velocity
+	head.spin_speed = data.spin_speed
+	head.get_node("Sprite2D").modulate = data.color
+	return head

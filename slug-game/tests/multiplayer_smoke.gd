@@ -32,6 +32,7 @@ func _process(_delta: float) -> bool:
 func _run() -> void:
 	arena = load("res://Game/Arena/arena.tscn").instantiate()
 	root.add_child(arena)
+	arena.port = int(OS.get_environment("SLUG_TEST_PORT"))
 	if "--host" in OS.get_cmdline_user_args():
 		await _test_host()
 	else:

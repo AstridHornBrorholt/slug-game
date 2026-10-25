@@ -1,8 +1,10 @@
 [gd_scene format=3 uid="uid://cexmpscvgw5er"]
 
+[ext_resource type="Texture2D" uid="uid://ik7bpicipsgn" path="res://Game/Slug/Slug-Dead-Shot-From-Behind.png" id="2_dheme"]
 [ext_resource type="Texture2D" uid="uid://duj1bgke2hn7y" path="res://Game/Slug/Sprite-Sheet.png" id="2_m7p01"]
 [ext_resource type="Script" uid="uid://koeufjjvvqyr" path="res://Game/Slug/slug.gd" id="2_player"]
 [ext_resource type="Texture2D" uid="uid://b41oq7ai8dkq6" path="res://Game/Slug/Sprite-Sheet-Naked.png" id="2_txlkp"]
+[ext_resource type="Texture2D" uid="uid://ddv2cychc6f7a" path="res://Game/Slug/Slug-Dead-Shot-From-Front.png" id="3_txaus"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_txlkp"]
 radius = 7.0
@@ -17,6 +19,12 @@ properties/1/replication_mode = 1
 properties/2/path = NodePath(".:facing_direction")
 properties/2/spawn = true
 properties/2/replication_mode = 1
+properties/3/path = NodePath(".:life_state")
+properties/3/spawn = true
+properties/3/replication_mode = 2
+properties/4/path = NodePath(".:death_from_front")
+properties/4/spawn = true
+properties/4/replication_mode = 2
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_txaus"]
 atlas = ExtResource("2_txlkp")
@@ -40,6 +48,22 @@ region = Rect2(0, 0, 24, 24)
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_txaus"]
 animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("2_dheme")
+}],
+"loop": false,
+"name": &"Dead from Behind",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("3_txaus")
+}],
+"loop": false,
+"name": &"Dead from Front",
+"speed": 5.0
+}, {
 "frames": [{
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_txaus")
@@ -80,6 +104,8 @@ animations = [{
 }]
 
 [node name="Player" type="CharacterBody2D" unique_id=505334421]
+collision_layer = 2
+collision_mask = 3
 script = ExtResource("2_player")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=497177919]
@@ -103,4 +129,4 @@ replication_config = SubResource("SceneReplicationConfig_player")
 [node name="SpriteSheet" type="AnimatedSprite2D" parent="." unique_id=646836810]
 position = Vector2(-3, -6)
 sprite_frames = SubResource("SpriteFrames_txaus")
-animation = &"Shell Move"
+animation = &"Shell Stop"

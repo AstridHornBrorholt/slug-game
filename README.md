@@ -15,16 +15,23 @@ Each instance controls its own slug with **Left/Right** to move, **Up** to jump,
 and **Space** to shoot. These use the existing `p1 left`, `p1 right`, `p1 jump`,
 and `p1 act` Input Map actions. Each player has a distinct tint and number, and
 your slug is labeled `(you)`.
-Slugs respawn if they fall out of the arena.
+The first projectile hit removes a slug's shell. A second hit kills it, plays
+the death animation for the shot's direction, and throws its severed head.
+Dead slugs cannot be controlled or shoot and respawn with their shell after three seconds.
+Slugs also respawn if they fall out of the arena.
+
+The shared camera follows every player on each instance, with room for sprites,
+labels, and the connection panel. It zooms out immediately when players spread
+apart and eases back in as they regroup. Padding, maximum zoom, follow speed,
+and HUD clearance are configurable on the Arena's `PlayerCamera` node.
 
 The game accepts one host and two clients on **UDP port 7000** by default. Change
-**Max Players** on the Arena node in the Inspector to configure a different total,
+**Max Players** or **Port** on the Arena node in the Inspector to configure the room,
 including the host (1–4095). Player slots, labels, colors, and spawn points adapt
 to the configured capacity. The host reserves seats during the join handshake,
 so simultaneous join attempts cannot overfill the room.
 
-If connecting
-across the Internet, the host needs a reachable address and UDP port forwarding;
+If connecting across the Internet, the host needs a reachable address and UDP port forwarding;
 there is no matchmaking or relay service. See [Godot's ENet documentation](https://docs.godotengine.org/en/stable/classes/class_enetmultiplayerpeer.html).
 
 **Disconnect** returns to the connection panel. If a client leaves, its slot opens
@@ -34,15 +41,22 @@ for a replacement player. If the host leaves, clients can host or join a new gam
 
 The host simulates all slugs and projectile collisions. Clients send control
 changes to the host, which checks the sending peer against the slug's assigned
-player. `MultiplayerSpawner` replicates players and projectiles, including late
-joins and removals. `MultiplayerSynchronizer` replicates position, velocity, and
-facing. Projectiles disappear on impact or after two seconds; no damage or health
-system is implemented yet.
+player. `MultiplayerSpawner` replicates players, projectiles, and severed heads,
+including late joins and removals. `MultiplayerSynchronizer` replicates position,
+velocity, facing, and hit state. The host decides hits and respawns. Projectiles
+disappear on impact or after two seconds; severed heads disappear after four.
 
 Client movement currently waits for the host's response, so this setup is best
 suited to local testing and LAN play. There is no client prediction yet.
 
 ## Verify multiplayer
+
+The camera's headless framing check covers joins, departures, teleports, and
+different viewport shapes:
+
+```sh
+/path/to/godot --headless --path slug-game --script res://tests/camera_smoke.gd
+```
 
 With Python 3 and a Godot 4.6 executable available, run from this repository:
 
@@ -57,4 +71,5 @@ host loss, switching from client to host, and standalone prefab shooting.
 It then launches four instances to check a three-player room, distinct player
 numbers/colors/spawn points, explicit rejection of the fourth player, occupancy
 updates, and successful retry using a vacated slot.
-Port 7000 must be available.
+The final two-instance check covers both directional deaths, head replication,
+and respawning. Tests use a free UDP port, so they can run while the game is open.

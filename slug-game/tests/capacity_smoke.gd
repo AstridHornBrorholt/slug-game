@@ -16,6 +16,7 @@ func _initialize() -> void:
 func _run() -> void:
 	arena = load("res://Game/Arena/arena.tscn").instantiate()
 	root.add_child(arena)
+	arena.port = int(OS.get_environment("SLUG_TEST_PORT"))
 	match role:
 		"host": await _test_host()
 		"first": await _test_first()
