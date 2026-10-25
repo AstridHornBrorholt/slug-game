@@ -11,7 +11,10 @@ A Godot 4.6 2D platformer with ENet multiplayer, supporting three players by def
 4. A third instance can join the same host to spawn P3. Further attempts display
    **Room full** until someone leaves.
 
-The host's arena choice is sent to joining players. Press **Esc** or click
+The host's arena choice is sent to joining players. Arena scenes live in
+`slug-game/Game/Levels`; the title menu lists every TileMapLayer scene there
+using its filename as the display name. To add a level, duplicate a scene in
+that folder, rename the file, and paint its tiles in Godot. Press **Esc** or click
 **Menu** during a match to see the controls, resume, or leave. This menu stops
 your local slug's controls while the multiplayer match continues.
 
@@ -48,10 +51,10 @@ labels, and the connection panel. It zooms out immediately when players spread
 apart and eases back in as they regroup. Padding, maximum zoom, follow speed,
 and HUD clearance are configurable on the Arena's `PlayerCamera` node.
 
-The arena's editable `EnvironmentMap` TileMapLayer is in
-`Game/Environment/Environment`. Its TileSet contains all 23 terrain sheets in
-that folder as 16×16 atlas tiles. Solid terrain tiles have collision shapes, so
-painting or erasing them changes both the visible map and the playable ground.
+The levels use the TileSet in `Game/Environment/Environment`. It contains all 23
+terrain sheets in that folder as 16×16 atlas tiles. Solid terrain tiles have
+collision shapes, so painting or erasing them changes both the visible map and
+the playable ground.
 The fence tiles remain decorative.
 
 The game accepts one host and two clients on **UDP port 7000** by default. Change

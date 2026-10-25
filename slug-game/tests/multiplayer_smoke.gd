@@ -49,9 +49,10 @@ func _run() -> void:
 
 func _test_host() -> void:
 	arena.max_players = 2
-	arena.get_node("%LevelSelect").select(1)
+	arena.get_node("%LevelSelect").select(arena._level_index_for_name("Cement Yard"))
 	arena.host_game()
-	_check(arena.selected_level_id == 1, "Host did not select Cement Yard")
+	_check(arena.selected_level_id == arena._level_index_for_name("Cement Yard"),
+		"Host did not select Cement Yard")
 	_check(arena.players.get_child_count() == 1, "Host should spawn P1 immediately")
 	if not await _wait_until(func(): return arena.players.get_child_count() == 2):
 		_check(false, "Client did not join the host")
@@ -84,7 +85,8 @@ func _test_client() -> void:
 	if not await _wait_until(func(): return arena.players.get_child_count() == 2):
 		_check(false, "Client did not receive two replicated slugs")
 		return
-	_check(arena.selected_level_id == 1, "Client did not receive the host's arena choice")
+	_check(arena.selected_level_id == arena._level_index_for_name("Cement Yard"),
+		"Client did not receive the host's arena choice")
 	_check(arena.get_node("EnvironmentMap").get_cell_source_id(Vector2i(1, 0)) == 3,
 		"Client did not load Cement Yard tiles")
 	var local_player: Node = arena.players.get_node(str(arena.multiplayer.get_unique_id()))

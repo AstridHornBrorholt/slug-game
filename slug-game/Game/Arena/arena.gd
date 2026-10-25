@@ -8,7 +8,7 @@ const SHOT_OFF_SHELL_SCENE: PackedScene = preload("res://Game/ShotOffShell/shot_
 const WEAPON_PICKUP_SCENE: PackedScene = preload("res://Game/Weapons/weapon_pickup.tscn")
 const DROPPED_GUN_SCENE: PackedScene = preload("res://Game/Weapons/dropped_gun.tscn")
 const EXPLOSION_SCENE: PackedScene = preload("res://Game/Weapons/explosion_burst.tscn")
-const CEMENT_YARD_SCENE: PackedScene = preload("res://Game/Environment/Environment/cement_yard.tscn")
+const LEVEL_DIRECTORY: String = "res://Game/Levels"
 const STARTING_LIVES: int = 3
 
 @export_range(1, 4095) var max_players: int = 3
@@ -29,7 +29,7 @@ var local_player_number: int = 1
 var session_joined: bool = false
 var rejection_message: String = ""
 var selected_level_id: int = 0
-var original_map_data: PackedByteArray
+var level_paths: Array[String] = []
 var round_over: bool = false
 
 @onready var players: Node2D = $Players
@@ -70,15 +70,20 @@ func _ready() -> void:
 	%ResumeButton.pressed.connect(_close_pause_menu)
 	%LeaveMatchButton.pressed.connect(func(): leave_game())
 	%RestartButton.pressed.connect(_restart_round)
-	%LevelSelect.add_item("Brickworks", 0)
-	%LevelSelect.add_item("Cement Yard", 1)
-	original_map_data = environment_map.tile_map_data.duplicate()
+	_discover_levels()
 	players.child_order_changed.connect(_update_status)
 	_set_session_active(false)
-	status.text = "Host a game, or enter an IP and join. %d players maximum." % max_players
+	if level_paths.is_empty():
+		status.text = "No levels found in %s." % LEVEL_DIRECTORY
+		%HostButton.disabled = true
+	else:
+		status.text = "Host a game, or enter an IP and join. %d players maximum." % max_players
 
 
 func host_game() -> void:
+	if not _apply_level(%LevelSelect.selected):
+		status.text = "Choose a valid arena before hosting."
+		return
 	var peer := ENetMultiplayerPeer.new()
 	# Keep transport space available to send a rejection even when the room is full.
 	var error := peer.create_server(port, 4095)
@@ -86,8 +91,6 @@ func host_game() -> void:
 		status.text = "Could not host on port %d: %s" % [port, error_string(error)]
 		return
 	multiplayer.multiplayer_peer = peer
-	selected_level_id = %LevelSelect.selected
-	_apply_level(selected_level_id)
 	room_capacity = clampi(max_players, 1, 4095)
 	local_player_number = 1
 	peer_slots = {1: 0}
@@ -147,7 +150,7 @@ func leave_game(message: String = "Disconnected. Host or join another game.") ->
 
 
 func _set_session_active(active: bool) -> void:
-	%HostButton.disabled = active
+	%HostButton.disabled = active or level_paths.is_empty()
 	%JoinButton.disabled = active
 	%Address.editable = not active
 	%LevelSelect.disabled = active
@@ -193,14 +196,56 @@ func _close_pause_menu() -> void:
 	%MenuButton.grab_focus()
 
 
-func _apply_level(level_id: int) -> void:
-	selected_level_id = clampi(level_id, 0, 1)
-	if selected_level_id == 0:
-		environment_map.tile_map_data = original_map_data.duplicate()
-	else:
-		var map: TileMapLayer = CEMENT_YARD_SCENE.instantiate()
-		environment_map.tile_map_data = map.tile_map_data.duplicate()
+func _discover_levels() -> void:
+	level_paths.clear()
+	%LevelSelect.clear()
+	var files := ResourceLoader.list_directory(LEVEL_DIRECTORY)
+	files.sort()
+	for file_name in files:
+		if not file_name.ends_with(".tscn"):
+			continue
+		var path := LEVEL_DIRECTORY.path_join(file_name)
+		var scene := load(path) as PackedScene
+		if scene == null:
+			continue
+		var map := scene.instantiate()
+		var valid := map is TileMapLayer
+		if valid:
+			valid = (map as TileMapLayer).tile_set != null
 		map.free()
+		if not valid:
+			continue
+		level_paths.append(path)
+		%LevelSelect.add_item(file_name.get_basename())
+	if not level_paths.is_empty():
+		var default_level := _level_index_for_name("Brickworks")
+		%LevelSelect.select(maxi(default_level, 0))
+		_apply_level(%LevelSelect.selected)
+
+
+func _level_index_for_name(level_name: String) -> int:
+	for index in range(level_paths.size()):
+		if level_paths[index].get_file().get_basename() == level_name:
+			return index
+	return -1
+
+
+func _apply_level(level_id: int) -> bool:
+	if level_id < 0 or level_id >= level_paths.size():
+		return false
+	var scene := load(level_paths[level_id]) as PackedScene
+	if scene == null:
+		return false
+	var map := scene.instantiate() as TileMapLayer
+	if map == null:
+		return false
+	environment_map.tile_set = map.tile_set
+	environment_map.tile_map_data = map.tile_map_data.duplicate()
+	environment_map.position = map.position
+	environment_map.z_index = map.z_index
+	selected_level_id = level_id
+	map.free()
+	return true
 
 
 func on_slug_eliminated() -> void:
@@ -278,8 +323,8 @@ func _on_auth_data(peer_id: int, data: PackedByteArray) -> void:
 			return
 		# Reserve immediately, including peers still completing the handshake.
 		peer_slots[peer_id] = slot
-		multiplayer.send_auth(peer_id, ("accepted:%d:%d:%d" % [
-			slot + 1, room_capacity, selected_level_id,
+		multiplayer.send_auth(peer_id, ("accepted:%d:%d:%s" % [
+			slot + 1, room_capacity, level_paths[selected_level_id].get_file().get_basename(),
 		]).to_utf8_buffer())
 		multiplayer.complete_auth(peer_id)
 	elif peer_id == 1:
@@ -293,7 +338,11 @@ func _on_auth_data(peer_id: int, data: PackedByteArray) -> void:
 		elif parts.size() == 4 and parts[0] == "accepted":
 			local_player_number = int(parts[1])
 			room_capacity = int(parts[2])
-			_apply_level(int(parts[3]))
+			var level_id := _level_index_for_name(parts[3])
+			if not _apply_level(level_id):
+				rejection_message = "This game is missing the host's arena: %s." % parts[3]
+				leave_game.call_deferred(rejection_message)
+				return
 			multiplayer.complete_auth(1)
 
 

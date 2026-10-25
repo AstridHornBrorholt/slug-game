@@ -12,9 +12,20 @@ func _run() -> void:
 	if not arena.get_node("HUD/Panel").visible or arena.get_node("HUD/GameBar").visible:
 		_fail("Title menu was not shown first")
 		return
-	if arena.get_node("%LevelSelect").item_count != 2:
-		_fail("Both arenas were not listed")
+	var level_files := ResourceLoader.list_directory("res://Game/Levels")
+	level_files.sort()
+	var expected_names: Array[String] = []
+	for file_name in level_files:
+		if file_name.ends_with(".tscn"):
+			expected_names.append(file_name.get_basename())
+	var level_select: OptionButton = arena.get_node("%LevelSelect")
+	if level_select.item_count != expected_names.size():
+		_fail("The arena menu did not discover every level scene")
 		return
+	for index in range(expected_names.size()):
+		if level_select.get_item_text(index) != expected_names[index]:
+			_fail("Arena name did not come from its filename")
+			return
 	var map: TileMapLayer = arena.get_node("EnvironmentMap")
 	var brick_cell := Vector2i(-1, -1)
 	for cell in map.get_used_cells():
@@ -24,11 +35,11 @@ func _run() -> void:
 	if brick_cell == Vector2i(-1, -1):
 		_fail("Brickworks has no ground brick to compare")
 		return
-	arena._apply_level(1)
+	arena._apply_level(arena._level_index_for_name("Cement Yard"))
 	if map.get_cell_source_id(brick_cell) != 3:
 		_fail("Cement Yard did not load")
 		return
-	arena._apply_level(0)
+	arena._apply_level(arena._level_index_for_name("Brickworks"))
 	if map.get_cell_source_id(brick_cell) != 2:
 		_fail("Brickworks did not restore")
 		return
